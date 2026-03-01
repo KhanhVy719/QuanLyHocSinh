@@ -15,9 +15,6 @@ services:
     restart: unless-stopped
     environment:
       - DOMAIN=${DOMAIN}
-    depends_on:
-      certbot:
-        condition: service_completed_successfully
 
   certbot:
     image: certbot/certbot
@@ -25,29 +22,17 @@ services:
       - certbot-etc:/etc/letsencrypt
       - certbot-var:/var/lib/letsencrypt
       - certbot-webroot:/var/www/certbot
-    entrypoint: >
-      sh -c "
-        if [ ! -f /etc/letsencrypt/live/${DOMAIN}/fullchain.pem ]; then
-          certbot certonly --webroot -w /var/www/certbot
-            --email ${EMAIL} --agree-tos --no-eff-email
-            -d ${DOMAIN}
-            --force-renewal;
-        else
-          certbot renew --quiet;
-        fi
-      "
-    environment:
-      - DOMAIN=${DOMAIN}
-      - EMAIL=${EMAIL}
+    command: certonly --webroot -w /var/www/certbot --email ${EMAIL} --agree-tos --no-eff-email -d ${DOMAIN} --keep-existing
+    profiles:
+      - setup
 
-  # Auto-renew SSL every 12 hours
   certbot-renew:
     image: certbot/certbot
     volumes:
       - certbot-etc:/etc/letsencrypt
       - certbot-var:/var/lib/letsencrypt
       - certbot-webroot:/var/www/certbot
-    entrypoint: sh -c "trap exit TERM; while :; do certbot renew --quiet; sleep 12h; done"
+    entrypoint: /bin/sh -c "trap exit TERM; while :; do certbot renew --quiet; sleep 12h & wait $${!}; done"
     restart: unless-stopped
 
 volumes:

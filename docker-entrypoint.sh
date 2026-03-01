@@ -3,10 +3,9 @@ set -e
 
 CERT_PATH="/etc/letsencrypt/live/${DOMAIN}/fullchain.pem"
 
-# If no SSL cert yet, use HTTP-only config first
 if [ ! -f "$CERT_PATH" ]; then
-  echo "SSL cert not found, starting HTTP-only mode for cert acquisition..."
-  cat > /etc/nginx/conf.d/default.conf << 'HTTPCONF'
+  echo "SSL cert not found, starting HTTP-only mode..."
+  cat > /etc/nginx/conf.d/default.conf << 'EOF'
 server {
     listen 80;
     server_name _;
@@ -21,10 +20,9 @@ server {
         try_files $uri $uri/ /index.html;
     }
 }
-HTTPCONF
+EOF
 else
   echo "SSL cert found, starting HTTPS mode..."
-  # Use envsubst only for DOMAIN variable in nginx config
   envsubst '${DOMAIN}' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf
 fi
 
