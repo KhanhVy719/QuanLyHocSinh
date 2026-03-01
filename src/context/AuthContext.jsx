@@ -55,6 +55,9 @@ export function AuthProvider({ children }) {
         if (!error && data && data.length > 0) {
           setUser(data[0]);
           localStorage.setItem('qlhs_user', JSON.stringify(data[0]));
+        } else {
+          alert('Tài khoản Google này không hợp lệ. Vui lòng liên hệ quản trị viên.');
+          supabase.auth.signOut();
         }
       }
     });
