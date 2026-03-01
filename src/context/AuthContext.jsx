@@ -127,7 +127,7 @@ export function AuthProvider({ children }) {
             maxWidth: 420, width: '90%',
             animation: 'popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
           }}>
-            <div style={{ fontSize: 64, marginBottom: 16, animation: 'float 3s ease-in-out infinite' }}>😿</div>
+            <img src="https://media1.tenor.com/m/pzFs5Ii7ZcYAAAAC/mihoyo-genshin.gif" alt="Sayu" style={{ width: 140, height: 140, borderRadius: '50%', objectFit: 'cover', marginBottom: 16, animation: 'float 3s ease-in-out infinite' }} />
             <h2 style={{ color: '#F8FAFC', fontSize: '1.5rem', fontWeight: 700, marginBottom: 8 }}>
               Truy cập bị từ chối
             </h2>
