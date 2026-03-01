@@ -3,6 +3,9 @@ set -e
 
 CERT_PATH="/etc/letsencrypt/live/${DOMAIN}/fullchain.pem"
 
+# Extract Supabase host from URL (remove https://)
+export SUPABASE_HOST=$(echo "$SUPABASE_URL" | sed 's|https://||')
+
 if [ ! -f "$CERT_PATH" ]; then
   echo "SSL cert not found, starting HTTP-only mode..."
   cat > /etc/nginx/conf.d/default.conf << 'EOF'
@@ -22,8 +25,8 @@ server {
 }
 EOF
 else
-  echo "SSL cert found, starting HTTPS mode..."
-  envsubst '${DOMAIN}' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf
+  echo "SSL cert found, starting HTTPS mode with Supabase proxy..."
+  envsubst '${DOMAIN} ${SUPABASE_URL} ${SUPABASE_HOST} ${SUPABASE_ANON_KEY}' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf
 fi
 
 exec nginx -g "daemon off;"
