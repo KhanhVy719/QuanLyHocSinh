@@ -27,7 +27,7 @@ function AdminAssignment() {
     async function loadData() {
       setLoading(true);
       const [teacherRes, classRes] = await Promise.all([
-        supabase.from('users').select('*').eq('role', 'giaovien').order('name'),
+        supabase.rpc('get_teachers'),
         supabase.from('classes').select('*').order('code'),
       ]);
       setTeachers(teacherRes.data || []);
@@ -40,7 +40,7 @@ function AdminAssignment() {
   async function assignClass(teacherId, className) {
     setSaving(teacherId);
     const val = className === '' ? null : className;
-    const { error } = await supabase.from('users').update({ assigned_class: val }).eq('id', teacherId);
+    const { error } = await supabase.rpc('assign_class', { p_teacher_id: teacherId, p_class: val });
     if (error) console.error('Error:', error);
     else setTeachers((prev) => prev.map((t) => (t.id === teacherId ? { ...t, assigned_class: val } : t)));
     setSaving(null);
@@ -66,22 +66,23 @@ function AdminAssignment() {
     setFormError('');
 
     if (modal === 'create') {
-      const { data, error } = await supabase.from('users').insert({
-        name: form.name, username: form.username, email: form.email || null,
-        password: form.password, role: 'giaovien', assigned_class: null, department: null,
-      }).select().single();
+      const { data, error } = await supabase.rpc('create_user', {
+        p_username: form.username, p_name: form.name,
+        p_password: form.password, p_role: 'giaovien',
+        p_email: form.email || '', p_assigned_class: null,
+      });
       if (error) {
-        setFormError(error.code === '23505' ? 'Tên đăng nhập đã tồn tại' : 'Lỗi: ' + error.message);
+        setFormError(error.message.includes('duplicate') ? 'Tên đăng nhập đã tồn tại' : 'Lỗi: ' + error.message);
         setSaving(null); return;
       }
-      setTeachers(prev => [...prev, data]);
+      setTeachers(prev => [...prev, data?.[0] || data]);
     } else {
       // Editing
       const updates = { name: form.name, username: form.username, email: form.email || null };
       if (form.password) updates.password = form.password;
-      const { error } = await supabase.from('users').update(updates).eq('id', modal.editing.id);
+      const { error } = await supabase.rpc('update_user', { p_id: modal.editing.id, p_data: updates });
       if (error) {
-        setFormError(error.code === '23505' ? 'Tên đăng nhập đã tồn tại' : 'Lỗi: ' + error.message);
+        setFormError(error.message.includes('duplicate') ? 'Tên đăng nhập đã tồn tại' : 'Lỗi: ' + error.message);
         setSaving(null); return;
       }
       setTeachers(prev => prev.map(t => t.id === modal.editing.id ? { ...t, ...updates } : t));
@@ -95,7 +96,7 @@ function AdminAssignment() {
     if (!ok) return;
     setSaving(teacher.id);
     try {
-      await supabase.from('users').delete().eq('id', teacher.id);
+      await supabase.rpc('delete_user', { p_id: teacher.id });
       setTeachers(prev => prev.filter(t => t.id !== teacher.id));
     } catch (err) {
       console.error('Delete error:', err);
@@ -254,7 +255,8 @@ function TeacherAssignment({ user }) {
   useEffect(() => {
     async function init() {
       setLoading(true);
-      const { data: freshUser } = await supabase.from('users').select('*').eq('id', user.id).single();
+      const { data: freshUsers } = await supabase.rpc('get_user_by_id', { p_id: user.id });
+      const freshUser = freshUsers?.[0] || null;
       const currentClass = freshUser?.assigned_class || null;
       setAssignedClass(currentClass);
       if (freshUser) localStorage.setItem('qlhs_user', JSON.stringify(freshUser));
@@ -319,7 +321,7 @@ function TeacherAssignment({ user }) {
         await supabase.from('students').update({ group_name: null, ...(s.status === 'Tổ trưởng' ? { status: 'Đang học' } : {}) }).eq('id', s.id);
       }
       if (s.status === 'Tổ trưởng') {
-        await supabase.from('users').delete().eq('name', s.name).eq('role', 'totruong');
+        await supabase.rpc('delete_user_by_name_role', { p_name: s.name, p_role: 'totruong' });
       }
     }
     setStudents(prev => prev.map(s => s.group_name === gName
@@ -347,7 +349,7 @@ function TeacherAssignment({ user }) {
     if (student?.status === 'Tổ trưởng') {
       if (hasGroupColumn) await supabase.from('students').update({ status: 'Đang học', group_name: null }).eq('id', studentId);
       else await supabase.from('students').update({ status: 'Đang học' }).eq('id', studentId);
-      await supabase.from('users').delete().eq('name', student.name).eq('role', 'totruong');
+      await supabase.rpc('delete_user_by_name_role', { p_name: student.name, p_role: 'totruong' });
       setStudents(prev => prev.map(s => s.id === studentId ? { ...s, group_name: null, status: 'Đang học' } : s));
     } else {
       if (hasGroupColumn) await supabase.from('students').update({ group_name: null }).eq('id', studentId);
@@ -367,9 +369,9 @@ function TeacherAssignment({ user }) {
     if (!formData.username || !formData.password) { setFormError('Vui lòng nhập tên đăng nhập và mật khẩu'); return; }
     if (formData.password.length < 6) { setFormError('Mật khẩu phải ít nhất 6 ký tự'); return; }
     setSaving(true); setFormError('');
-    const { error: userError } = await supabase.from('users').insert({
-      username: formData.username, password: formData.password, name: modal.studentName,
-      email: formData.email || null, role: 'totruong', assigned_class: assignedClass, department: null,
+    const { error: userError } = await supabase.rpc('create_user', {
+      p_username: formData.username, p_password: formData.password, p_name: modal.studentName,
+      p_email: formData.email || '', p_role: 'totruong', p_assigned_class: assignedClass,
     });
     if (userError) {
       setFormError(userError.code === '23505' ? 'Tên đăng nhập đã tồn tại' : 'Lỗi: ' + userError.message);
@@ -384,7 +386,7 @@ function TeacherAssignment({ user }) {
   async function removeLeader(studentId) {
     setSaving(true);
     const student = students.find(s => s.id === studentId);
-    if (student) await supabase.from('users').delete().eq('name', student.name).eq('role', 'totruong');
+    if (student) await supabase.rpc('delete_user_by_name_role', { p_name: student.name, p_role: 'totruong' });
     await supabase.from('students').update({ status: 'Đang học' }).eq('id', studentId);
     setStudents(prev => prev.map(s => s.id === studentId ? { ...s, status: 'Đang học' } : s));
     setSaving(false);

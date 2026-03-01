@@ -81,22 +81,16 @@ export default function StudentManagement() {
       let assignedClass = null;
 
       if (user?.role === 'giaovien') {
-        const { data: freshUser } = await supabase
-          .from('users')
-          .select('assigned_class')
-          .eq('id', user.id)
-          .single();
+        const { data: freshUsers } = await supabase.rpc('get_user_by_id', { p_id: user.id });
+        const freshUser = freshUsers?.[0] || null;
         assignedClass = freshUser?.assigned_class || null;
         setTeacherClass(assignedClass);
       }
 
       if (user?.role === 'totruong') {
         // Find the student record matching this tổ trưởng to get their group
-        const { data: freshUser } = await supabase
-          .from('users')
-          .select('assigned_class, name')
-          .eq('id', user.id)
-          .single();
+        const { data: freshUsers2 } = await supabase.rpc('get_user_by_id', { p_id: user.id });
+        const freshUser = freshUsers2?.[0] || null;
         assignedClass = freshUser?.assigned_class || null;
         setTeacherClass(assignedClass);
 

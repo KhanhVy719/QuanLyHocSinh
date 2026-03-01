@@ -186,7 +186,8 @@ export default function Dashboard() {
 
     // For totruong: load group students with scores
     if (user?.role === 'totruong') {
-      const { data: uData } = await supabase.from('users').select('assigned_class, name').eq('id', user.id).single();
+      const { data: uArr } = await supabase.rpc('get_user_by_id', { p_id: user.id });
+      const uData = uArr?.[0] || null;
       if (uData?.assigned_class && uData?.name) {
         const { data: meStudent } = await supabase.from('students').select('group_name').eq('name', uData.name).eq('class', uData.assigned_class).single();
         if (meStudent?.group_name) {
