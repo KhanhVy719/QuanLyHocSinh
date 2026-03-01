@@ -28,11 +28,13 @@ if (isProduction) {
       if (url.includes('/supa')) {
         const headers = new Headers(opts.headers || {});
         headers.delete('apikey');
-        // Remove fake Authorization (proxy-key), keep real JWT tokens
+        // Remove fake Authorization, keep real JWT tokens
         const auth = headers.get('Authorization');
         if (auth && auth.includes('proxy-key')) {
           headers.delete('Authorization');
         }
+        // Add secret header — nginx rejects requests without it
+        headers.set('X-App-Request', '1');
         opts = { ...opts, headers };
       }
     }
