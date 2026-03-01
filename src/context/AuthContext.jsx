@@ -46,25 +46,15 @@ export function AuthProvider({ children }) {
       const currentUser = localStorage.getItem('qlhs_user');
       if (event === 'SIGNED_IN' && session?.user?.email && !currentUser) {
         const email = session.user.email;
-        // Match with users table
-        const { data } = await supabase.from('users').select('*').eq('email', email).single();
-        if (data) {
-          setUser(data);
-          localStorage.setItem('qlhs_user', JSON.stringify(data));
-        } else {
-          // Auto-create user with default role if not found
-          const newUser = {
-            username: email.split('@')[0],
-            name: session.user.user_metadata?.full_name || email.split('@')[0],
-            email: email,
-            role: 'giaovien',
-            password: '',
-          };
-          const { data: created, error } = await supabase.from('users').insert(newUser).select().single();
-          if (!error && created) {
-            setUser(created);
-            localStorage.setItem('qlhs_user', JSON.stringify(created));
-          }
+        const name = session.user.user_metadata?.full_name || email.split('@')[0];
+        const username = email.split('@')[0];
+        // Find or create user via RPC (bypasses RLS)
+        const { data, error } = await supabase.rpc('google_login', {
+          p_email: email, p_name: name, p_username: username,
+        });
+        if (!error && data && data.length > 0) {
+          setUser(data[0]);
+          localStorage.setItem('qlhs_user', JSON.stringify(data[0]));
         }
       }
     });
