@@ -130,9 +130,6 @@ export default function LoginPage() {
           </button>
 
 
-          <p className="login-footer-text">
-            © 2024 Hệ thống Quản lý Học sinh
-          </p>
         </div>
       </div>
     </div>
