@@ -26,6 +26,7 @@ export const ROLE_LABELS = {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loginRejected, setLoginRejected] = useState(false);
 
   useEffect(() => {
     // Check localStorage for saved session
@@ -56,7 +57,7 @@ export function AuthProvider({ children }) {
           setUser(data[0]);
           localStorage.setItem('qlhs_user', JSON.stringify(data[0]));
         } else {
-          alert('Tài khoản Google này không hợp lệ. Vui lòng liên hệ quản trị viên.');
+          setLoginRejected(true);
           supabase.auth.signOut();
         }
       }
@@ -104,6 +105,61 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={{ user, loading, login, loginWithGoogle, logout, hasAccess }}>
+      {loginRejected && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 9999,
+          background: 'linear-gradient(135deg, #0F172A 0%, #1E1B4B 50%, #312E81 100%)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontFamily: "'Inter', sans-serif",
+          animation: 'fadeIn 0.4s ease',
+        }}>
+          <style>{`
+            @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+            @keyframes popIn { from { opacity: 0; transform: scale(0.8) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+            @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+            @keyframes shake { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-5deg); } 75% { transform: rotate(5deg); } }
+          `}</style>
+          <div style={{
+            background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(20px)',
+            borderRadius: 24, padding: '48px 40px', textAlign: 'center',
+            border: '1px solid rgba(255,255,255,0.1)',
+            boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
+            maxWidth: 420, width: '90%',
+            animation: 'popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
+          }}>
+            <div style={{ fontSize: 64, marginBottom: 16, animation: 'float 3s ease-in-out infinite' }}>😿</div>
+            <h2 style={{ color: '#F8FAFC', fontSize: '1.5rem', fontWeight: 700, marginBottom: 8 }}>
+              Truy cập bị từ chối
+            </h2>
+            <p style={{ color: '#94A3B8', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: 24 }}>
+              Tài khoản Google này <strong style={{ color: '#F87171' }}>chưa được đăng ký</strong> trong hệ thống.
+              <br/>Vui lòng liên hệ quản trị viên để được cấp quyền truy cập.
+            </p>
+            <div style={{
+              background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.2)',
+              borderRadius: 12, padding: '12px 16px', marginBottom: 24,
+              color: '#FCA5A5', fontSize: '0.82rem',
+            }}>
+              ⚠️ Chỉ tài khoản được quản trị viên thêm vào mới có thể đăng nhập
+            </div>
+            <button
+              onClick={() => setLoginRejected(false)}
+              style={{
+                background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+                color: '#fff', border: 'none', borderRadius: 12,
+                padding: '14px 32px', fontSize: '0.95rem', fontWeight: 600,
+                cursor: 'pointer', width: '100%',
+                boxShadow: '0 4px 15px rgba(99,102,241,0.4)',
+                transition: 'transform 0.2s, box-shadow 0.2s',
+              }}
+              onMouseOver={e => { e.target.style.transform = 'translateY(-2px)'; e.target.style.boxShadow = '0 8px 25px rgba(99,102,241,0.5)'; }}
+              onMouseOut={e => { e.target.style.transform = 'translateY(0)'; e.target.style.boxShadow = '0 4px 15px rgba(99,102,241,0.4)'; }}
+            >
+              ← Quay lại đăng nhập
+            </button>
+          </div>
+        </div>
+      )}
       {children}
     </AuthContext.Provider>
   );
