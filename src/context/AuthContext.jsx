@@ -73,20 +73,19 @@ export function AuthProvider({ children }) {
   }, []);
 
   async function login(username, password) {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('username', username)
-      .eq('password', password)
-      .single();
+    const { data, error } = await supabase.rpc('login_user', {
+      p_username: username,
+      p_password: password,
+    });
 
-    if (error || !data) {
+    if (error || !data || data.length === 0) {
       return { success: false, error: 'Tên đăng nhập hoặc mật khẩu không đúng' };
     }
 
-    setUser(data);
-    localStorage.setItem('qlhs_user', JSON.stringify(data));
-    return { success: true, user: data };
+    const userData = data[0];
+    setUser(userData);
+    localStorage.setItem('qlhs_user', JSON.stringify(userData));
+    return { success: true, user: userData };
   }
 
   function logout() {
