@@ -1,0 +1,56 @@
+services:
+  web:
+    build:
+      context: .
+      args:
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+      - certbot-webroot:/var/www/certbot
+    restart: unless-stopped
+    environment:
+      - DOMAIN=${DOMAIN}
+    depends_on:
+      certbot:
+        condition: service_completed_successfully
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+      - certbot-webroot:/var/www/certbot
+    entrypoint: >
+      sh -c "
+        if [ ! -f /etc/letsencrypt/live/${DOMAIN}/fullchain.pem ]; then
+          certbot certonly --webroot -w /var/www/certbot
+            --email ${EMAIL} --agree-tos --no-eff-email
+            -d ${DOMAIN}
+            --force-renewal;
+        else
+          certbot renew --quiet;
+        fi
+      "
+    environment:
+      - DOMAIN=${DOMAIN}
+      - EMAIL=${EMAIL}
+
+  # Auto-renew SSL every 12 hours
+  certbot-renew:
+    image: certbot/certbot
+    volumes:
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+      - certbot-webroot:/var/www/certbot
+    entrypoint: sh -c "trap exit TERM; while :; do certbot renew --quiet; sleep 12h; done"
+    restart: unless-stopped
+
+volumes:
+  certbot-etc:
+  certbot-var:
+  certbot-webroot:
