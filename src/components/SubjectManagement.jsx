@@ -17,6 +17,7 @@ export default function SubjectManagement() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState({}); // which courses are expanded
+  const [myCourseCode, setMyCourseCode] = useState(null); // for teacher/totruong
 
   // Subject modal
   const [subjectModal, setSubjectModal] = useState(null); // null | 'create' | { editing: subject }
@@ -43,6 +44,23 @@ export default function SubjectManagement() {
     setSubjects(subRes.data || []);
     setCourses(courseRes.data || []);
     setCourseSubjects(csRes.data || []);
+
+    // For non-admin: find their class's course
+    if (!isAdmin && user) {
+      const { data: userData } = await supabase.rpc('get_user_by_id', { p_id: user.id });
+      const assignedClass = userData?.[0]?.assigned_class;
+      if (assignedClass) {
+        const { data: classData } = await supabase.from('classes').select('course_code').eq('name', 'L\u1edbp ' + assignedClass).single();
+        if (!classData) {
+          // Try matching by code
+          const { data: classData2 } = await supabase.from('classes').select('course_code').eq('code', assignedClass).single();
+          setMyCourseCode(classData2?.course_code || null);
+        } else {
+          setMyCourseCode(classData?.course_code || null);
+        }
+      }
+    }
+
     // Auto expand all courses
     const exp = {};
     (courseRes.data || []).forEach(c => { exp[c.code] = true; });
@@ -160,6 +178,8 @@ export default function SubjectManagement() {
   const unassigned = subjects.filter(s => !courseSubjects.find(cs => cs.subject_code === s.code));
 
   const filteredCourses = courses.filter(c => {
+    // Non-admin: only show their course
+    if (!isAdmin && myCourseCode && c.code !== myCourseCode) return false;
     if (!search) return true;
     const q = search.toLowerCase();
     if (c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q)) return true;
@@ -172,9 +192,23 @@ export default function SubjectManagement() {
 
   if (loading) return <KokomiLoading text="Đang tải dữ liệu..." />;
 
+  // Non-admin without assigned course
+  if (!isAdmin && !myCourseCode) {
+    return (
+      <div>
+        <div className="page-header"><h2>Môn học</h2><p>Danh sách môn học theo khóa của bạn</p></div>
+        <div style={{ textAlign: 'center', padding: 60, color: '#9CA3AF' }}>
+          <BookOpen size={48} style={{ marginBottom: 12, opacity: 0.4 }} />
+          <p>Lớp của bạn chưa được gán khóa học nào.</p>
+          <p style={{ fontSize: '0.85rem' }}>Vui lòng liên hệ quản trị viên.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
-      <div className="page-header"><h2>Quản lý môn học</h2><p>Tổ chức môn học theo khóa (nhiều-nhiều)</p></div>
+      <div className="page-header"><h2>{isAdmin ? 'Quản lý môn học' : 'Môn học'}</h2><p>{isAdmin ? 'Tổ chức môn học theo khóa' : 'Các môn học trong khóa của bạn'}</p></div>
 
       {/* Stats */}
       <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
