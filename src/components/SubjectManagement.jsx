@@ -31,6 +31,7 @@ export default function SubjectManagement() {
 
   // Link subject to course modal
   const [linkModal, setLinkModal] = useState(null); // course_code to add subjects to
+  const [linking, setLinking] = useState(null); // subject_code being linked/unlinked
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -151,19 +152,23 @@ export default function SubjectManagement() {
 
   // --- Link/Unlink subjects ---
   async function linkSubject(courseCode, subjectCode) {
+    setLinking(subjectCode);
     try {
       const { error } = await supabase.from('course_subjects').insert({ course_code: courseCode, subject_code: subjectCode });
       if (error) throw error;
       setCourseSubjects(prev => [...prev, { course_code: courseCode, subject_code: subjectCode }]);
     } catch (err) { alert('Lỗi: ' + err.message); }
+    setLinking(null);
   }
   async function unlinkSubject(courseCode, subjectCode) {
+    setLinking(subjectCode);
     try {
       const { error } = await supabase.from('course_subjects').delete()
         .eq('course_code', courseCode).eq('subject_code', subjectCode);
       if (error) throw error;
       setCourseSubjects(prev => prev.filter(cs => !(cs.course_code === courseCode && cs.subject_code === subjectCode)));
     } catch (err) { alert('Lỗi: ' + err.message); }
+    setLinking(null);
   }
 
   // --- Helpers ---
@@ -434,11 +439,16 @@ export default function SubjectManagement() {
                         <span style={{ fontWeight: 600, color: '#4F6BED', marginRight: 8 }}>{s.code}</span>
                         <span style={{ color: '#374151' }}>{s.name}</span>
                       </div>
-                      <button onClick={() => linkSubject(linkModal, s.code)} style={{
-                        background: 'linear-gradient(135deg, #10B981, #059669)', border: 'none', borderRadius: 8,
-                        padding: '6px 14px', color: '#fff', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer',
+                      <button onClick={() => linkSubject(linkModal, s.code)} disabled={linking === s.code} style={{
+                        background: linking === s.code ? '#9CA3AF' : 'linear-gradient(135deg, #10B981, #059669)', border: 'none', borderRadius: 8,
+                        padding: '6px 14px', color: '#fff', fontWeight: 600, fontSize: '0.8rem', cursor: linking === s.code ? 'wait' : 'pointer',
+                        display: 'flex', alignItems: 'center', gap: 4,
                       }}>
-                        <Plus size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />Thêm
+                        {linking === s.code ? (
+                          <><img src="https://media.tenor.com/JfGKLGHatiIAAAAi/kokomi-loading.gif" alt="loading" style={{ width: 16, height: 16 }} /> Đang thêm...</>
+                        ) : (
+                          <><Plus size={14} />Thêm</>
+                        )}
                       </button>
                     </div>
                   ))}
