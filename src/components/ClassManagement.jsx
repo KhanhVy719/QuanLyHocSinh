@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, School, Users, UserCheck, Pencil, Trash2, Plus, X, AlertTriangle } from 'lucide-react';
+import { Search, School, Users, UserCheck, Pencil, Trash2, Plus, X, AlertTriangle, FolderOpen } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import KokomiLoading from './KokomiLoading';
 
@@ -14,36 +14,40 @@ export default function ClassManagement() {
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [form, setForm] = useState({ code: '', name: '', teacher: '', room: '', max_students: 45, schedule: '' });
+  const [form, setForm] = useState({ code: '', name: '', teacher: '', room: '', max_students: 45, schedule: '', course_code: '' });
+  const [courses, setCourses] = useState([]);
 
   useEffect(() => { fetchClasses(); }, []);
 
   async function fetchClasses() {
     setLoading(true);
-    const { data, error } = await supabase.from('classes').select('*').order('code');
-    if (error) console.error('Error:', error);
-    else {
-      const { data: students } = await supabase.from('students').select('class');
-      const counts = {};
-      (students || []).forEach((s) => { counts[s.class] = (counts[s.class] || 0) + 1; });
-      const enriched = (data || []).map((c) => {
-        const className = c.name.replace('Lớp ', '');
-        return { ...c, students: counts[className] || 0 };
-      });
-      setClasses(enriched);
-    }
+    const [classRes, studentRes, courseRes] = await Promise.all([
+      supabase.from('classes').select('*').order('code'),
+      supabase.from('students').select('class'),
+      supabase.from('courses').select('*').order('code'),
+    ]);
+    setCourses(courseRes.data || []);
+    const data = classRes.data || [];
+    const students = studentRes.data || [];
+    const counts = {};
+    students.forEach((s) => { counts[s.class] = (counts[s.class] || 0) + 1; });
+    const enriched = data.map((c) => {
+      const className = c.name.replace('Lớp ', '');
+      return { ...c, students: counts[className] || 0 };
+    });
+    setClasses(enriched);
     setLoading(false);
   }
 
   function openAdd() {
     setEditing(null);
-    setForm({ code: '', name: '', teacher: '', room: '', max_students: 45, schedule: '' });
+    setForm({ code: '', name: '', teacher: '', room: '', max_students: 45, schedule: '', course_code: '' });
     setShowModal(true);
   }
 
   function openEdit(cls) {
     setEditing(cls);
-    setForm({ code: cls.code, name: cls.name, teacher: cls.teacher, room: cls.room, max_students: cls.max_students, schedule: cls.schedule || '' });
+    setForm({ code: cls.code, name: cls.name, teacher: cls.teacher, room: cls.room, max_students: cls.max_students, schedule: cls.schedule || '', course_code: cls.course_code || '' });
     setShowModal(true);
   }
 
@@ -53,7 +57,7 @@ export default function ClassManagement() {
     try {
       if (editing) {
         const { error } = await supabase.from('classes')
-          .update({ name: form.name, teacher: form.teacher, room: form.room, max_students: form.max_students, schedule: form.schedule })
+          .update({ name: form.name, teacher: form.teacher, room: form.room, max_students: form.max_students, schedule: form.schedule, course_code: form.course_code || null })
           .eq('code', form.code);
         if (error) throw error;
         setClasses(prev => prev.map(c => c.code === form.code ? { ...c, ...form } : c));
@@ -131,6 +135,9 @@ export default function ClassManagement() {
               <div className="item-card-body">
                 <div className="detail-row"><span>Giáo viên:</span><strong>{c.teacher}</strong></div>
                 <div className="detail-row"><span>Phòng học:</span><strong>{c.room}</strong></div>
+                {c.course_code && (
+                  <div className="detail-row"><span>Khóa:</span><span style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)', color: '#fff', padding: '2px 10px', borderRadius: 6, fontSize: '0.8rem', fontWeight: 600 }}>{c.course_code} - {courses.find(cr => cr.code === c.course_code)?.name || ''}</span></div>
+                )}
                 <div className="detail-row" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '4px' }}>
                   <span>Sĩ số:</span>
                   <div className="progress-bar-wrapper">
@@ -184,6 +191,13 @@ export default function ClassManagement() {
               <div>
                 <label style={labelStyle}>Lịch học</label>
                 <input style={inputStyle} value={form.schedule} onChange={e => setForm({ ...form, schedule: e.target.value })} placeholder="VD: Sáng T2-T6" />
+              </div>
+              <div>
+                <label style={labelStyle}>Khóa học</label>
+                <select style={inputStyle} value={form.course_code} onChange={e => setForm({ ...form, course_code: e.target.value })}>
+                  <option value="">-- Chưa chọn khóa --</option>
+                  {courses.map(cr => <option key={cr.code} value={cr.code}>{cr.code} - {cr.name}</option>)}
+                </select>
               </div>
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 24 }}>
