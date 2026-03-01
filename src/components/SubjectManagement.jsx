@@ -180,7 +180,7 @@ export default function SubjectManagement() {
     const linked = courseSubjects.filter(cs => cs.course_code === courseCode).map(cs => cs.subject_code);
     return subjects.filter(s => !linked.includes(s.code));
   }
-  const unassigned = subjects.filter(s => !courseSubjects.find(cs => cs.subject_code === s.code));
+
 
   const filteredCourses = courses.filter(c => {
     // Non-admin: only show their course
@@ -323,8 +323,8 @@ export default function SubjectManagement() {
         );
       })}
 
-      {/* All Subjects - Master list */}
-      {subjects.length > 0 && (
+      {/* All Subjects - Master list (admin only) */}
+      {isAdmin && subjects.length > 0 && (
         <div style={{ marginTop: 24, borderRadius: 16, border: '1px solid #E0E7FF', overflow: 'hidden', background: '#EEF2FF' }}>
           <div style={{ padding: '16px 20px', background: '#E0E7FF', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
