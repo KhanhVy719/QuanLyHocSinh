@@ -22,6 +22,7 @@ if (isProduction) {
       url = url.replace(origin + '/rest/v1/', origin + '/supaapi/');
       url = url.replace(origin + '/auth/v1/', origin + '/supaauth/');
       url = url.replace(origin + '/storage/v1/', origin + '/supastorage/');
+      url = url.replace(origin + '/functions/v1/', origin + '/supafunc/');
 
       // For proxy requests: clean up fake auth headers
       // Nginx will inject the real apikey + Authorization
