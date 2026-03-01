@@ -219,7 +219,7 @@ export default function SubjectManagement() {
       <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
         <div className="stat-card"><div className="stat-info"><label>Tổng khóa</label><div className="stat-value">{courses.length}</div></div><div className="stat-icon blue"><FolderOpen size={24} /></div></div>
         <div className="stat-card"><div className="stat-info"><label>Tổng môn học</label><div className="stat-value">{subjects.length}</div></div><div className="stat-icon green"><BookOpen size={24} /></div></div>
-        <div className="stat-card"><div className="stat-info"><label>Chưa gán khóa</label><div className="stat-value">{unassigned.length}</div></div><div className="stat-icon purple"><Unlink size={24} /></div></div>
+        <div className="stat-card"><div className="stat-info"><label>Tổng môn học</label><div className="stat-value">{subjects.length}</div></div><div className="stat-icon purple"><Unlink size={24} /></div></div>
       </div>
 
       {/* Actions */}
@@ -323,38 +323,48 @@ export default function SubjectManagement() {
         );
       })}
 
-      {/* Unassigned subjects */}
-      {unassigned.length > 0 && (
-        <div style={{ marginTop: 24, borderRadius: 16, border: '1px dashed #D1D5DB', overflow: 'hidden', background: '#FEFCE8' }}>
-          <div style={{ padding: '16px 20px', background: '#FEF9C3', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      {/* All Subjects - Master list */}
+      {subjects.length > 0 && (
+        <div style={{ marginTop: 24, borderRadius: 16, border: '1px solid #E0E7FF', overflow: 'hidden', background: '#EEF2FF' }}>
+          <div style={{ padding: '16px 20px', background: '#E0E7FF', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <Unlink size={18} color="#D97706" />
-              <span style={{ fontWeight: 600, color: '#92400E' }}>Môn chưa gán khóa ({unassigned.length})</span>
+              <BookOpen size={18} color="#4F46E5" />
+              <span style={{ fontWeight: 600, color: '#312E81' }}>Tất cả môn học ({subjects.length})</span>
             </div>
           </div>
           <div style={{ padding: '12px 20px' }}>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {unassigned.map(s => (
-                <div key={s.code} style={{
-                  display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px',
-                  background: '#fff', borderRadius: 10, border: '1px solid #E5E7EB', fontSize: '0.85rem',
-                }}>
-                  <span style={{ fontWeight: 600, color: '#4F6BED' }}>{s.code}</span>
-                  <span style={{ color: '#374151' }}>{s.name}</span>
-                  {isAdmin && (
-                    <div style={{ display: 'flex', gap: 2 }}>
-                      <button onClick={() => openEditSubject(s)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6366F1', padding: 2 }}><Pencil size={13} /></button>
-                      <button onClick={() => setDeleteTarget(s)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#EF4444', padding: 2 }}><Trash2 size={13} /></button>
-                    </div>
-                  )}
-                </div>
-              ))}
+              {subjects.map(s => {
+                const linkedCourses = courseSubjects.filter(cs => cs.subject_code === s.code).map(cs => cs.course_code);
+                return (
+                  <div key={s.code} style={{
+                    display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px',
+                    background: '#fff', borderRadius: 10, border: '1px solid #E5E7EB', fontSize: '0.85rem',
+                  }}>
+                    <span style={{ fontWeight: 600, color: '#4F6BED' }}>{s.code}</span>
+                    <span style={{ color: '#374151' }}>{s.name}</span>
+                    {linkedCourses.length > 0 && (
+                      <div style={{ display: 'flex', gap: 3 }}>
+                        {linkedCourses.map(cc => (
+                          <span key={cc} style={{ background: '#6366F1', color: '#fff', padding: '1px 6px', borderRadius: 4, fontSize: '0.7rem', fontWeight: 600 }}>{cc}</span>
+                        ))}
+                      </div>
+                    )}
+                    {isAdmin && (
+                      <div style={{ display: 'flex', gap: 2 }}>
+                        <button onClick={() => openEditSubject(s)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6366F1', padding: 2 }}><Pencil size={13} /></button>
+                        <button onClick={() => setDeleteTarget(s)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#EF4444', padding: 2 }}><Trash2 size={13} /></button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
       )}
 
-      {filteredCourses.length === 0 && unassigned.length === 0 && (
+      {filteredCourses.length === 0 && subjects.length === 0 && (
         <div style={{ textAlign: 'center', padding: 60, color: '#9CA3AF' }}>
           <FolderOpen size={48} style={{ marginBottom: 12, opacity: 0.4 }} />
           <p>Chưa có khóa hoặc môn học nào</p>
