@@ -3,8 +3,8 @@ services:
     build:
       context: .
       args:
-        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
-        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
+        VITE_SUPABASE_URL: "https://proxy.local"
+        VITE_SUPABASE_ANON_KEY: "proxy-key"
     ports:
       - "80:80"
       - "443:443"
