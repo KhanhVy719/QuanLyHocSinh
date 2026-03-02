@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Truy cập bị từ chối</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      color: #fff;
+      overflow: hidden;
+    }
+    .container {
+      text-align: center;
+      padding: 40px;
+      max-width: 520px;
+      animation: fadeIn 0.8s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .shield {
+      width: 120px;
+      height: 120px;
+      margin: 0 auto 24px;
+      background: linear-gradient(135deg, #EF4444, #DC2626);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 56px;
+      box-shadow: 0 0 40px rgba(239, 68, 68, 0.4);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 40px rgba(239, 68, 68, 0.4); }
+      50% { box-shadow: 0 0 60px rgba(239, 68, 68, 0.6); }
+    }
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    p {
+      color: #A5B4FC;
+      font-size: 1rem;
+      line-height: 1.6;
+      margin-bottom: 8px;
+    }
+    .info {
+      margin-top: 24px;
+      padding: 16px 24px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .info p { font-size: 0.85rem; color: #8B9FEF; }
+    .flag { font-size: 48px; margin-bottom: 12px; }
+    .gif-container {
+      margin: 20px auto;
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 3px solid rgba(255, 255, 255, 0.1);
+    }
+    .gif-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="shield">🛡️</div>
+    <h1>Truy cập bị từ chối</h1>
+    <p>Hệ thống chỉ cho phép truy cập từ Việt Nam 🇻🇳</p>
+    <div class="gif-container">
+      <img src="https://media1.tenor.com/m/Q2W2FYBXW_EAAAAC/sayu-genshin-impact.gif" alt="Sayu" />
+    </div>
+    <p>Vị trí của bạn không được phép truy cập trang web này.</p>
+    <div class="info">
+      <p>🔒 Đây là biện pháp bảo mật để bảo vệ dữ liệu hệ thống.</p>
+      <p>Nếu bạn đang ở Việt Nam và gặp lỗi này, vui lòng tắt VPN và thử lại.</p>
+    </div>
+  </div>
+</body>
+</html>
