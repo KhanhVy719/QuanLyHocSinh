@@ -198,10 +198,10 @@ export default function Dashboard() {
           const scoreMap = {};
           const deductMap = {};
           (logs || []).forEach(r => {
-            scoreMap[r.student_id] = (scoreMap[r.student_id] ?? 10) + r.change;
+            scoreMap[r.student_id] = (scoreMap[r.student_id] ?? 0) + r.change;
             if (r.change < 0) deductMap[r.student_id] = (deductMap[r.student_id] || 0) + r.change;
           });
-          setGroupStudents((grpStudents || []).map(s => ({ ...s, score: scoreMap[s.id] ?? 10, deductions: deductMap[s.id] || 0 })));
+          setGroupStudents((grpStudents || []).map(s => ({ ...s, score: scoreMap[s.id] ?? 0, deductions: deductMap[s.id] || 0 })));
         }
       }
     }
@@ -216,7 +216,7 @@ export default function Dashboard() {
         const scoreMap = {};
         const deductMap = {};
         (logs || []).forEach(r => {
-          scoreMap[r.student_id] = (scoreMap[r.student_id] ?? 10) + r.change;
+          scoreMap[r.student_id] = (scoreMap[r.student_id] ?? 0) + r.change;
           if (r.change < 0) deductMap[r.student_id] = (deductMap[r.student_id] || 0) + r.change;
         });
         // Group by group_name
@@ -225,7 +225,7 @@ export default function Dashboard() {
           const g = s.group_name || 'Không tổ';
           if (!groups[g]) groups[g] = { name: g, students: 0, totalScore: 0, totalDeductions: 0 };
           groups[g].students++;
-          groups[g].totalScore += scoreMap[s.id] ?? 10;
+          groups[g].totalScore += scoreMap[s.id] ?? 0;
           groups[g].totalDeductions += deductMap[s.id] || 0;
         });
         const ranking = Object.values(groups).map(g => ({ ...g, avgScore: Math.round((g.totalScore / g.students) * 10) / 10 }));
@@ -234,7 +234,7 @@ export default function Dashboard() {
         // Store all students with scores for list
         setAllClassStudents(allStudents2.map(s => ({
           ...s,
-          score: scoreMap[s.id] ?? 10,
+          score: scoreMap[s.id] ?? 0,
           deductions: deductMap[s.id] || 0,
         })));
       }
@@ -698,7 +698,7 @@ export default function Dashboard() {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, padding: '14px 18px', background: '#F9FAFB', borderRadius: 14 }}>
               <span style={{ fontSize: '0.85rem', color: '#6B7280' }}>Điểm hiện tại:</span>
-              {(() => { const s = groupStudents.find(x => x.id === historyStudent.id); const sc = s?.score ?? 10; return <span style={{ fontSize: '1.5rem', fontWeight: 800, color: sc >= 8 ? '#059669' : sc >= 5 ? '#D97706' : '#DC2626' }}>{sc}</span>; })()}
+              {(() => { const s = groupStudents.find(x => x.id === historyStudent.id); const sc = s?.score ?? 0; return <span style={{ fontSize: '1.5rem', fontWeight: 800, color: sc >= 8 ? '#059669' : sc >= 5 ? '#D97706' : '#DC2626' }}>{sc}</span>; })()}
             </div>
             {scoreHistory.length === 0 ? (
               <div style={{ textAlign: 'center', padding: 30, color: '#9CA3AF' }}>Chưa có lịch sử chấm điểm</div>
@@ -731,8 +731,8 @@ export default function Dashboard() {
 
             {/* Current score display */}
             {(() => {
-              const current = scoreModal.currentScore ?? 10;
-              const preview = Math.max(0, current + scoreChange);
+              const current = scoreModal.currentScore ?? 0;
+              const preview = current + scoreChange;
               return (
                 <div style={{ background: '#F9FAFB', borderRadius: 14, padding: 20, marginBottom: 20, textAlign: 'center' }}>
                   <div style={{ fontSize: '0.85rem', color: '#6B7280', marginBottom: 8 }}>Điểm hiện tại</div>
@@ -785,8 +785,8 @@ export default function Dashboard() {
               <button onClick={() => setScoreModal(null)} style={{ padding: '10px 24px', borderRadius: 10, border: '1.5px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontWeight: 600, color: '#6B7280' }}>Hủy</button>
               <button disabled={scoreSaving || scoreChange === 0} onClick={async () => {
                 setScoreSaving(true);
-                const current = scoreModal.currentScore ?? 10;
-                const newScore = Math.max(0, current + scoreChange);
+                const current = scoreModal.currentScore ?? 0;
+                const newScore = current + scoreChange;
                 // If editing a past week, set created_at to a time within that week
                 const insertData = {
                   student_id: scoreModal.studentId,

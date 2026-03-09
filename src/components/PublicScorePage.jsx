@@ -93,12 +93,12 @@ export default function PublicScorePage({ token }) {
       const scoreMap = {};
       const deductMap = {};
       (logs || []).forEach(r => {
-        scoreMap[r.student_id] = (scoreMap[r.student_id] ?? 10) + r.change;
+        scoreMap[r.student_id] = (scoreMap[r.student_id] ?? 0) + r.change;
         if (r.change < 0) deductMap[r.student_id] = (deductMap[r.student_id] || 0) + r.change;
       });
       setStudents(freshStudents.map(s => ({
         ...s,
-        score: scoreMap[s.id] ?? 10,
+        score: scoreMap[s.id] ?? 0,
         deductions: deductMap[s.id] || 0,
       })));
       setLoading(false);

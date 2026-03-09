@@ -574,7 +574,7 @@ export default function StudentManagement() {
                   <td>{s.phone || '—'}</td>
                   <td><span className="badge success">{s.status}</span></td>
                   {user?.role === 'totruong' && (() => {
-                    const sc = scoreRecords[s.id]?.['khac'] ?? 10;
+                    const sc = scoreRecords[s.id]?.['khac'] ?? 0;
                     return <td style={{ textAlign: 'center', fontWeight: 700, fontSize: '1rem', color: sc >= 8 ? '#059669' : sc >= 5 ? '#D97706' : '#DC2626' }}>{sc}</td>;
                   })()}
                   {user?.role === 'totruong' && selectedWeek === 0 && <td style={{ textAlign: 'center' }}>
@@ -991,8 +991,8 @@ export default function StudentManagement() {
 
             {/* Current score display */}
             {(() => {
-              const current = scoreRecords[scoreModal.studentId]?.['khac'] ?? 10;
-              const preview = Math.max(0, current + scoreChange);
+              const current = scoreRecords[scoreModal.studentId]?.['khac'] ?? 0;
+              const preview = current + scoreChange;
               return (
                 <div style={{ background: '#F9FAFB', borderRadius: 14, padding: 20, marginBottom: 20, textAlign: 'center' }}>
                   <div style={{ fontSize: '0.85rem', color: '#6B7280', marginBottom: 8 }}>Điểm hiện tại</div>
@@ -1049,8 +1049,8 @@ export default function StudentManagement() {
               <button onClick={() => setScoreModal(null)} style={{ padding: '10px 24px', borderRadius: 10, border: '1.5px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontWeight: 600, color: '#6B7280' }}>Hủy</button>
               <button disabled={scoreSaving || scoreChange === 0} onClick={async () => {
                 setScoreSaving(true);
-                const current = scoreRecords[scoreModal.studentId]?.['khac'] ?? 10;
-                const newScore = Math.max(0, current + scoreChange);
+                const current = scoreRecords[scoreModal.studentId]?.['khac'] ?? 0;
+                const newScore = current + scoreChange;
                 // Insert score log - if past week, set created_at within that week
                 const insertData = {
                   student_id: scoreModal.studentId,
@@ -1098,7 +1098,7 @@ export default function StudentManagement() {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, padding: '14px 18px', background: '#F9FAFB', borderRadius: 14 }}>
               <span style={{ fontSize: '0.85rem', color: '#6B7280' }}>Điểm hiện tại:</span>
-              {(() => { const sc = scoreRecords[historyStudent.id]?.['khac'] ?? 10; return <span style={{ fontSize: '1.5rem', fontWeight: 800, color: sc >= 8 ? '#059669' : sc >= 5 ? '#D97706' : '#DC2626' }}>{sc}</span>; })()}
+              {(() => { const sc = scoreRecords[historyStudent.id]?.['khac'] ?? 0; return <span style={{ fontSize: '1.5rem', fontWeight: 800, color: sc >= 8 ? '#059669' : sc >= 5 ? '#D97706' : '#DC2626' }}>{sc}</span>; })()}
             </div>
             {scoreHistory.length === 0 ? (
               <div style={{ textAlign: 'center', padding: 30, color: '#9CA3AF' }}>Chưa có lịch sử chấm điểm</div>
