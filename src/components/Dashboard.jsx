@@ -547,37 +547,75 @@ export default function Dashboard() {
       )}
       {user?.role === 'giaovien' && stats.teacherClass && (
         <div style={{ marginTop: 24 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-            <h3 style={{ margin: 0, color: '#1F2937' }}>🤖 Phân tích AI</h3>
-            <button
-              onClick={async () => {
-                setAiLoading(true);
-                setAiAnalysis(null);
-                try {
-                  const { data, error } = await supabase.functions.invoke('analyze-scores', {
-                    body: { classId: stats.teacherClass },
-                  });
-                  if (error) throw error;
-                  setAiAnalysis(data);
-                } catch (err) {
-                  setAiAnalysis({ summary: 'Lỗi khi phân tích: ' + (err.message || 'Unknown error'), declining: [], improving: [], atRisk: [] });
-                }
-                setAiLoading(false);
-              }}
-              disabled={aiLoading}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                padding: '8px 16px', borderRadius: 8, border: 'none',
-                background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
-                color: '#fff', fontWeight: 600, fontSize: '0.85rem',
-                cursor: aiLoading ? 'wait' : 'pointer', opacity: aiLoading ? 0.7 : 1,
-                transition: 'all 0.2s',
-              }}
-            >
-              <span style={{ fontSize: 16 }}>🧠</span>
-              {aiLoading ? 'Đang phân tích...' : 'Phân tích ngay'}
-            </button>
+          <h3 style={{ margin: '0 0 16px', color: '#1F2937' }}>🤖 Phân tích AI</h3>
+
+          {/* Analysis Type + Time Period */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#374151' }}>📋 Loại:</span>
+            <select id="ai-analysis-type" defaultValue="scores" className="filter-select" onChange={() => setAiAnalysis(null)}>
+              <option value="scores">📊 Điểm thi đua</option>
+              <option value="conduct">📝 Hạnh kiểm</option>
+            </select>
+            <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#374151' }}>⏰ Phạm vi:</span>
+            <select id="ai-time-period" defaultValue="hk1" className="filter-select">
+              <option value="week">Tuần hiện tại</option>
+              <option value="month">Tháng này</option>
+              <option value="hk1">Học kỳ 1</option>
+              <option value="hk2">Học kỳ 2</option>
+              <option value="year">Cả năm</option>
+            </select>
           </div>
+
+          {/* Analyze Button */}
+          <button
+            onClick={async () => {
+              setAiLoading(true);
+              setAiAnalysis(null);
+              try {
+                const period = document.getElementById('ai-time-period')?.value || 'hk1';
+                const analysisType = document.getElementById('ai-analysis-type')?.value || 'scores';
+                let dateStart, dateEnd;
+                if (period === 'week') {
+                  const wr = getCurrentRange();
+                  dateStart = wr.start; dateEnd = wr.end;
+                } else if (period === 'month') {
+                  const now = new Date();
+                  dateStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+                  dateEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
+                } else if (period === 'hk1') {
+                  dateStart = semesterRanges.hk1.start.toISOString();
+                  dateEnd = semesterRanges.hk1.end.toISOString();
+                } else if (period === 'hk2') {
+                  dateStart = semesterRanges.hk2.start.toISOString();
+                  dateEnd = semesterRanges.hk2.end.toISOString();
+                } else {
+                  dateStart = semesterRanges.hk1.start.toISOString();
+                  dateEnd = semesterRanges.hk2.end.toISOString();
+                }
+                const { data, error } = await supabase.functions.invoke('analyze-scores', {
+                  body: { classId: stats.teacherClass, dateStart, dateEnd, analysisType },
+                });
+                if (error) throw error;
+                setAiAnalysis({ ...data, _type: analysisType });
+              } catch (err) {
+                setAiAnalysis({ summary: 'Lỗi: ' + (err.message || 'Unknown'), _type: 'scores' });
+              }
+              setAiLoading(false);
+            }}
+            disabled={aiLoading}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '10px 20px', borderRadius: 10, border: 'none',
+              background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+              color: '#fff', fontWeight: 600, fontSize: '0.9rem',
+              cursor: aiLoading ? 'wait' : 'pointer', opacity: aiLoading ? 0.7 : 1,
+              transition: 'all 0.2s', marginBottom: 16,
+            }}
+          >
+            <span style={{ fontSize: 18 }}>🧠</span>
+            {aiLoading ? 'Đang phân tích...' : 'Phân tích ngay'}
+          </button>
+
           {aiAnalysis && (
             <div style={{ display: 'grid', gap: 16 }}>
               {/* Summary */}
@@ -585,8 +623,62 @@ export default function Dashboard() {
                 <div style={{ fontWeight: 700, marginBottom: 8, color: '#4338CA', fontSize: '0.95rem' }}>📊 Nhận xét tổng hợp</div>
                 <div style={{ color: '#1E1B4B', lineHeight: 1.6 }}>{aiAnalysis.summary}</div>
               </div>
-              {/* At Risk */}
-              {aiAnalysis.atRisk?.length > 0 && (
+
+              {/* CONDUCT: Statistics */}
+              {aiAnalysis._type === 'conduct' && aiAnalysis.statistics && (
+                <div style={{ padding: 16, borderRadius: 12, background: '#F0F9FF', border: '1px solid #BAE6FD' }}>
+                  <div style={{ fontWeight: 700, marginBottom: 12, color: '#0369A1', fontSize: '0.95rem' }}>📊 Thống kê hạnh kiểm</div>
+                  <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                    {[
+                      { label: 'Tốt', count: aiAnalysis.statistics.tot, color: '#059669', bg: '#D1FAE5' },
+                      { label: 'Khá', count: aiAnalysis.statistics.kha, color: '#2563EB', bg: '#DBEAFE' },
+                      { label: 'TB', count: aiAnalysis.statistics.trungBinh, color: '#D97706', bg: '#FEF3C7' },
+                      { label: 'Yếu', count: aiAnalysis.statistics.yeu, color: '#DC2626', bg: '#FEE2E2' },
+                    ].map(s => (
+                      <div key={s.label} style={{ padding: '8px 16px', borderRadius: 10, background: s.bg, textAlign: 'center', minWidth: 70 }}>
+                        <div style={{ fontSize: '1.2rem', fontWeight: 800, color: s.color }}>{s.count || 0}</div>
+                        <div style={{ fontSize: '0.78rem', fontWeight: 600, color: s.color }}>{s.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* CONDUCT: Rating List */}
+              {aiAnalysis._type === 'conduct' && aiAnalysis.conductRatings?.length > 0 && (
+                <div style={{ padding: 16, borderRadius: 12, background: '#FAFAFA', border: '1px solid #E5E7EB' }}>
+                  <div style={{ fontWeight: 700, marginBottom: 10, color: '#374151', fontSize: '0.95rem' }}>📋 Xếp loại chi tiết</div>
+                  {aiAnalysis.conductRatings.map((s, i) => {
+                    const rc = { 'Tốt': '#059669', 'Khá': '#2563EB', 'Trung bình': '#D97706', 'Yếu': '#DC2626' };
+                    const rb = { 'Tốt': '#D1FAE5', 'Khá': '#DBEAFE', 'Trung bình': '#FEF3C7', 'Yếu': '#FEE2E2' };
+                    return (
+                      <div key={i} style={{ padding: '8px 12px', marginBottom: 6, borderRadius: 8, background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                        <div style={{ flex: 1 }}>
+                          <span style={{ fontWeight: 600 }}>{s.name}</span> <span style={{ color: '#6B7280', fontSize: '0.85rem' }}>({s.id})</span>
+                          <div style={{ fontSize: '0.82rem', color: '#6B7280', marginTop: 2 }}>{s.reason}</div>
+                        </div>
+                        <span style={{ padding: '4px 12px', borderRadius: 8, fontWeight: 700, fontSize: '0.82rem', background: rb[s.rating] || '#F3F4F6', color: rc[s.rating] || '#374151', whiteSpace: 'nowrap' }}>{s.rating}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* CONDUCT: Warnings */}
+              {aiAnalysis._type === 'conduct' && aiAnalysis.warnings?.length > 0 && (
+                <div style={{ padding: 16, borderRadius: 12, background: '#FEF2F2', border: '1px solid #FECACA' }}>
+                  <div style={{ fontWeight: 700, marginBottom: 10, color: '#DC2626', fontSize: '0.95rem' }}>⚠️ Cần lưu ý ({aiAnalysis.warnings.length})</div>
+                  {aiAnalysis.warnings.map((s, i) => (
+                    <div key={i} style={{ padding: '8px 12px', marginBottom: 6, borderRadius: 8, background: '#fff' }}>
+                      <span style={{ fontWeight: 600 }}>{s.name}</span> <span style={{ color: '#6B7280', fontSize: '0.85rem' }}>({s.id})</span>
+                      <div style={{ fontSize: '0.85rem', color: '#DC2626', marginTop: 2 }}>{s.reason}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* SCORES: At Risk */}
+              {aiAnalysis._type !== 'conduct' && aiAnalysis.atRisk?.length > 0 && (
                 <div style={{ padding: 16, borderRadius: 12, background: '#FEF2F2', border: '1px solid #FECACA' }}>
                   <div style={{ fontWeight: 700, marginBottom: 10, color: '#DC2626', fontSize: '0.95rem' }}>⚠️ Học sinh có nguy cơ ({aiAnalysis.atRisk.length})</div>
                   {aiAnalysis.atRisk.map((s, i) => (
@@ -597,8 +689,7 @@ export default function Dashboard() {
                   ))}
                 </div>
               )}
-              {/* Declining */}
-              {aiAnalysis.declining?.length > 0 && (
+              {aiAnalysis._type !== 'conduct' && aiAnalysis.declining?.length > 0 && (
                 <div style={{ padding: 16, borderRadius: 12, background: '#FFFBEB', border: '1px solid #FDE68A' }}>
                   <div style={{ fontWeight: 700, marginBottom: 10, color: '#D97706', fontSize: '0.95rem' }}>📉 Xu hướng giảm ({aiAnalysis.declining.length})</div>
                   {aiAnalysis.declining.map((s, i) => (
@@ -609,8 +700,7 @@ export default function Dashboard() {
                   ))}
                 </div>
               )}
-              {/* Improving */}
-              {aiAnalysis.improving?.length > 0 && (
+              {aiAnalysis._type !== 'conduct' && aiAnalysis.improving?.length > 0 && (
                 <div style={{ padding: 16, borderRadius: 12, background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
                   <div style={{ fontWeight: 700, marginBottom: 10, color: '#059669', fontSize: '0.95rem' }}>📈 Học sinh tiến bộ ({aiAnalysis.improving.length})</div>
                   {aiAnalysis.improving.map((s, i) => (
@@ -621,7 +711,7 @@ export default function Dashboard() {
                   ))}
                 </div>
               )}
-              {aiAnalysis.declining?.length === 0 && aiAnalysis.improving?.length === 0 && aiAnalysis.atRisk?.length === 0 && (
+              {!aiAnalysis.conductRatings?.length && !aiAnalysis.declining?.length && !aiAnalysis.improving?.length && !aiAnalysis.atRisk?.length && (
                 <div style={{ padding: 16, borderRadius: 12, background: '#F9FAFB', border: '1px solid #E5E7EB', textAlign: 'center', color: '#6B7280' }}>
                   Chưa có đủ dữ liệu để phân tích chi tiết.
                 </div>
