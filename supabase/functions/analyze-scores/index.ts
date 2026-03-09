@@ -1,6 +1,13 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 
+function classifyConduct(score: number, totalDeductions: number): string {
+  if (score >= 0) return "Tốt";
+  if (score >= -3) return "Khá";
+  if (score >= -7) return "Trung bình";
+  return "Yếu";
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -8,7 +15,6 @@ Deno.serve(async (req: Request) => {
 
   try {
     const { classId, dateStart, dateEnd, analysisType } = await req.json();
-    // analysisType: 'scores' (default) | 'conduct'
     if (!classId) {
       return new Response(JSON.stringify({ error: "classId is required" }), {
         status: 400,
@@ -20,7 +26,6 @@ Deno.serve(async (req: Request) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch ALL students in this class
     const { data: students } = await supabase
       .from("students")
       .select("id, name, group_name, status")
@@ -33,11 +38,10 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Fetch score logs with optional date filtering
     const ids = students.map((s: any) => s.id);
     let query = supabase
       .from("score_logs")
-      .select("student_id, change, note, score_after, created_at")
+      .select("student_id, change, note, created_at")
       .in("student_id", ids)
       .order("created_at", { ascending: true });
 
@@ -46,118 +50,120 @@ Deno.serve(async (req: Request) => {
 
     const { data: logs } = await query;
 
-    // Build student summaries
-    const studentSummaries = students.map((s: any) => {
+    const type = analysisType || "scores";
+    const timePeriod = dateStart && dateEnd
+      ? `từ ${dateStart.substring(0, 10)} đến ${dateEnd.substring(0, 10)}`
+      : "toàn bộ thời gian";
+
+    // Build compact student data (no detailed logs to save tokens)
+    const studentData = students.map((s: any) => {
       const studentLogs = (logs || []).filter((l: any) => l.student_id === s.id);
       const totalChange = studentLogs.reduce((sum: number, l: any) => sum + l.change, 0);
-      const currentScore = totalChange; // Base score is 0
-
-      const additions = studentLogs
-        .filter((l: any) => l.change > 0)
-        .map((l: any) => ({
-          points: `+${l.change}`,
-          reason: l.note || "Không ghi lý do",
-          date: l.created_at,
-        }));
-
-      const deductions = studentLogs
+      const totalAdd = studentLogs.filter((l: any) => l.change > 0).reduce((sum: number, l: any) => sum + l.change, 0);
+      const totalDeduct = studentLogs.filter((l: any) => l.change < 0).reduce((sum: number, l: any) => sum + l.change, 0);
+      // Only keep last 3 deduction reasons (most recent) to save tokens
+      const recentDeductions = studentLogs
         .filter((l: any) => l.change < 0)
-        .map((l: any) => ({
-          points: `${l.change}`,
-          reason: l.note || "Không ghi lý do",
-          date: l.created_at,
-        }));
+        .slice(-3)
+        .map((l: any) => l.note || "Không rõ");
+      const recentAdditions = studentLogs
+        .filter((l: any) => l.change > 0)
+        .slice(-3)
+        .map((l: any) => l.note || "Không rõ");
 
       return {
         id: s.id,
         name: s.name,
-        group: s.group_name || "Không tổ",
-        status: s.status || "Đang học",
-        currentScore,
-        totalAdditions: additions.reduce((sum: number, a: any) => sum + parseFloat(a.points), 0),
-        totalDeductions: deductions.reduce((sum: number, d: any) => sum + parseFloat(d.points), 0),
-        additionDetails: additions,
-        deductionDetails: deductions,
-        totalLogs: studentLogs.length,
+        score: totalChange,
+        adds: totalAdd,
+        deducts: totalDeduct,
+        logs: studentLogs.length,
+        recentBad: recentDeductions,
+        recentGood: recentAdditions,
       };
     });
 
-    // Build prompt based on analysis type
-    const type = analysisType || "scores";
-    const timePeriod = dateStart && dateEnd ? `từ ${dateStart.substring(0, 10)} đến ${dateEnd.substring(0, 10)}` : "toàn bộ thời gian";
-
-    let prompt: string;
+    // For CONDUCT analysis: calculate ratings SERVER-SIDE, only ask AI for summary
     if (type === "conduct") {
-      // Hạnh kiểm analysis
-      prompt = `Bạn là trợ lý AI chuyên xếp loại hạnh kiểm học sinh dựa trên sổ điểm thi đua.
+      const conductRatings = studentData
+        .filter((s: any) => s.logs > 0)
+        .map((s: any) => ({
+          id: s.id,
+          name: s.name,
+          score: s.score,
+          rating: classifyConduct(s.score, Math.abs(s.deducts)),
+          reason: s.recentBad.length > 0
+            ? `${s.deducts} điểm trừ (${s.recentBad.join(', ')})`
+            : `${s.adds} điểm cộng`,
+        }));
 
-## Dữ liệu học sinh lớp ${classId} (${timePeriod}):
-${JSON.stringify(studentSummaries, null, 2)}
+      // Students with no logs = Tốt
+      const noLogStudents = studentData.filter((s: any) => s.logs === 0);
+      noLogStudents.forEach((s: any) => {
+        conductRatings.push({
+          id: s.id, name: s.name, score: 0, rating: "Tốt",
+          reason: "Chưa có vi phạm",
+        });
+      });
 
-## Quy tắc xếp hạnh kiểm:
-- Điểm mặc định ban đầu là 0. Cộng/trừ dựa trên hành vi.
-- **Tốt**: Điểm >= 0, không vi phạm nghiêm trọng, có nhiều điểm cộng
-- **Khá**: Điểm >= -3, vi phạm nhẹ, có cố gắng sửa chữa
-- **Trung bình**: Điểm >= -7, vi phạm nhiều lần nhưng không quá nghiêm trọng
-- **Yếu**: Điểm < -7, vi phạm nhiều, lý do nghiêm trọng
-- Hãy đọc KỸ lý do cộng/trừ điểm để xếp loại chính xác
-- Xem xét cả tần suất vi phạm và mức độ nghiêm trọng
+      const stats = {
+        tot: conductRatings.filter((r: any) => r.rating === "Tốt").length,
+        kha: conductRatings.filter((r: any) => r.rating === "Khá").length,
+        trungBinh: conductRatings.filter((r: any) => r.rating === "Trung bình").length,
+        yeu: conductRatings.filter((r: any) => r.rating === "Yếu").length,
+      };
 
-## Yêu cầu output:
-Trả về JSON THUẦN (không markdown, không code block):
-{
-  "conductRatings": [
-    {"id": "mã HS", "name": "tên", "score": số_điểm, "rating": "Tốt/Khá/Trung bình/Yếu", "reason": "lý do xếp loại ngắn gọn"}
-  ],
-  "statistics": {
-    "tot": số_lượng_tốt,
-    "kha": số_lượng_khá,
-    "trungBinh": số_lượng_tb,
-    "yeu": số_lượng_yếu
-  },
-  "warnings": [
-    {"id": "mã HS", "name": "tên", "reason": "cảnh báo cụ thể cho HS cần lưu ý"}
-  ],
-  "summary": "Nhận xét tổng hợp 3-5 câu: tỷ lệ hạnh kiểm, vấn đề nổi bật, đề xuất"
-}
+      const warnings = conductRatings
+        .filter((r: any) => r.rating === "Yếu" || r.rating === "Trung bình")
+        .map((r: any) => ({ id: r.id, name: r.name, reason: r.reason }));
 
-Chỉ xếp loại cho học sinh CÓ dữ liệu log. Học sinh chưa có log = Tốt (chưa vi phạm).`;
-    } else {
-      // Score analysis (original)
-      prompt = `Bạn là trợ lý AI chuyên phân tích hành vi và kết quả học tập của học sinh dựa trên sổ đầu bài.
+      // Ask AI only for a short summary (MUCH less tokens needed)
+      const geminiKey = Deno.env.get("GEMINI_API_KEY");
+      let summary = `Lớp ${classId} (${timePeriod}): ${stats.tot} Tốt, ${stats.kha} Khá, ${stats.trungBinh} TB, ${stats.yeu} Yếu.`;
 
-## Dữ liệu học sinh lớp ${classId} (${timePeriod}):
-${JSON.stringify(studentSummaries, null, 2)}
+      if (geminiKey) {
+        const shortPrompt = `Viết nhận xét 3-5 câu bằng tiếng Việt về hạnh kiểm lớp ${classId} (${timePeriod}).
+Thống kê: ${stats.tot} Tốt, ${stats.kha} Khá, ${stats.trungBinh} TB, ${stats.yeu} Yếu / tổng ${conductRatings.length} HS.
+HS yếu: ${warnings.map((w: any) => `${w.name}: ${w.reason}`).join('; ') || 'Không có'}.
+Hãy đánh giá chung, nêu vấn đề nổi bật, đề xuất cho giáo viên. Chỉ trả text thuần, KHÔNG JSON.`;
 
-## Hướng dẫn phân tích:
-- Điểm mặc định ban đầu mỗi học sinh là 0
-- Mỗi lần vi phạm sẽ bị trừ điểm (change < 0) kèm lý do
-- Mỗi lần làm tốt sẽ được cộng điểm (change > 0) kèm lý do
-- Hãy đọc KỸ từng lý do cộng/trừ điểm để đánh giá hành vi học sinh
-- Phân tích xu hướng: ai đang sa sút, ai đang tiến bộ
-- Xác định học sinh nguy cơ: điểm thấp, bị trừ nhiều lần, lý do trừ nghiêm trọng
-- Xác định học sinh tiến bộ: được cộng điểm nhiều, lý do cộng tích cực
+        try {
+          const models = ["gemini-2.5-flash", "gemini-2.0-flash"];
+          for (const model of models) {
+            const res = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  contents: [{ parts: [{ text: shortPrompt }] }],
+                  generationConfig: { temperature: 0.3, maxOutputTokens: 1024 },
+                }),
+              }
+            );
+            const data = await res.json();
+            if (res.ok && !data?.error) {
+              summary = data?.candidates?.[0]?.content?.parts?.[0]?.text || summary;
+              break;
+            }
+            const errMsg = data?.error?.message || "";
+            if (!errMsg.includes("high demand") && !errMsg.includes("overloaded")) break;
+          }
+        } catch { /* keep default summary */ }
+      }
 
-## Yêu cầu output:
-Trả về JSON THUẦN (không markdown, không code block):
-{
-  "declining": [
-    {"id": "mã HS", "name": "tên", "reason": "phân tích ngắn gọn bằng tiếng Việt dựa trên lý do trừ điểm"}
-  ],
-  "improving": [
-    {"id": "mã HS", "name": "tên", "reason": "phân tích ngắn gọn bằng tiếng Việt dựa trên lý do cộng điểm"}
-  ],
-  "atRisk": [
-    {"id": "mã HS", "name": "tên", "score": số_điểm, "reason": "phân tích chi tiết bằng tiếng Việt, nêu rõ các lý do bị trừ"}
-  ],
-  "summary": "Nhận xét tổng hợp 3-5 câu bằng tiếng Việt: đánh giá chung về lớp, các vấn đề nổi bật, và đề xuất cho giáo viên"
-}
-
-Nếu học sinh chưa có log nào thì KHÔNG đưa vào declining/improving/atRisk.
-Chỉ phân tích những học sinh CÓ dữ liệu log.`;
+      // Return pre-built result (NO Gemini JSON parsing needed!)
+      return new Response(JSON.stringify({
+        conductRatings,
+        statistics: stats,
+        warnings,
+        summary,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    // Call Gemini API
+    // SCORE ANALYSIS: use AI but with compact data
     const geminiKey = Deno.env.get("GEMINI_API_KEY");
     if (!geminiKey) {
       return new Response(
@@ -166,70 +172,67 @@ Chỉ phân tích những học sinh CÓ dữ liệu log.`;
       );
     }
 
+    // Only send students WITH logs, compact format
+    const activeStudents = studentData.filter((s: any) => s.logs > 0);
+    const compactData = activeStudents.map((s: any) =>
+      `${s.id}|${s.name}|điểm:${s.score}|+${s.adds}/${s.deducts}|lỗi:[${s.recentBad.join(',')}]|tốt:[${s.recentGood.join(',')}]`
+    ).join('\n');
+
+    const prompt = `Phân tích điểm thi đua lớp ${classId} (${timePeriod}).
+Điểm 0 là mặc định. Trừ=vi phạm, cộng=tích cực. Format: ID|Tên|điểm|+cộng/trừ|lỗi gần nhất|tốt gần nhất
+
+${compactData}
+
+Trả JSON thuần: {"declining":[{"id":"","name":"","reason":""}],"improving":[{"id":"","name":"","reason":""}],"atRisk":[{"id":"","name":"","score":0,"reason":""}],"summary":"3-5 câu tiếng Việt"}
+Chỉ top 10 đáng chú ý nhất mỗi mục. Reason ngắn gọn.`;
+
     const requestBody = JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
         temperature: 0.3,
-        maxOutputTokens: 8192,
+        maxOutputTokens: 4096,
         responseMimeType: "application/json",
       },
     });
 
-    // Try primary model, fallback to secondary if overloaded
     const models = ["gemini-2.5-flash", "gemini-2.0-flash"];
-    let geminiRes: Response | null = null;
+    let geminiRes: Response = new Response();
     let geminiData: any = null;
 
     for (const model of models) {
       geminiRes = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: requestBody,
-        }
+        { method: "POST", headers: { "Content-Type": "application/json" }, body: requestBody }
       );
       geminiData = await geminiRes.json();
-
-      // If success or non-overload error, stop retrying
       if (geminiRes.ok && !geminiData?.error) break;
       const errMsg = geminiData?.error?.message || "";
-      if (!errMsg.includes("high demand") && !errMsg.includes("overloaded") && !errMsg.includes("503")) break;
-      // Otherwise try next model
+      if (!errMsg.includes("high demand") && !errMsg.includes("overloaded")) break;
     }
 
-    if (!geminiRes!.ok || geminiData?.error) {
+    if (!geminiRes.ok || geminiData?.error) {
       return new Response(JSON.stringify({
         declining: [], improving: [], atRisk: [],
-        summary: `Lỗi Gemini API: ${geminiData?.error?.message || JSON.stringify(geminiData?.error) || `HTTP ${geminiRes.status}`}`,
+        summary: `Lỗi Gemini API: ${geminiData?.error?.message || `HTTP ${geminiRes.status}`}`,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const aiText =
-      geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    const aiText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
     let analysis;
     try {
-      // Try direct parse first
       analysis = JSON.parse(aiText.trim());
     } catch {
       try {
-        // Strip markdown code blocks (```json ... ``` or ``` ... ```)
-        let cleaned = aiText.replace(/```[\w]*\s*/g, "").replace(/```/g, "").trim();
-        // If still not valid JSON, try to extract JSON object
-        const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          cleaned = jsonMatch[0];
-        }
-        analysis = JSON.parse(cleaned);
+        const jsonMatch = aiText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) analysis = JSON.parse(jsonMatch[0]);
+        else throw new Error("no json");
       } catch {
         analysis = {
-          declining: [],
-          improving: [],
-          atRisk: [],
-          summary: aiText || `Gemini không trả về dữ liệu. Status: ${geminiRes.status}.`,
+          declining: [], improving: [], atRisk: [],
+          summary: aiText || "Không thể phân tích.",
         };
       }
     }
