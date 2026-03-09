@@ -602,20 +602,14 @@ export default function Dashboard() {
                 if (typeof result === 'string') {
                   try { result = JSON.parse(result); } catch { result = { summary: result }; }
                 }
-                // Case 2: everything dumped in summary as JSON string
-                if (typeof result.summary === 'string' && !result.conductRatings && !result.declining) {
-                  // Try to find JSON in summary
-                  const raw = result.summary;
-                  const jsonStart = raw.indexOf('{');
-                  if (jsonStart >= 0) {
-                    try {
-                      const cleaned = raw.substring(jsonStart).replace(/```[\w]*\s*/g, '').replace(/```/g, '');
-                      const parsed = JSON.parse(cleaned);
-                      if (parsed.conductRatings || parsed.declining || parsed.summary) {
-                        result = parsed;
-                      }
-                    } catch { /* keep original */ }
-                  }
+                // Case 2: summary contains raw JSON (always try if it looks like JSON)
+                if (typeof result.summary === 'string' && result.summary.trim().startsWith('{')) {
+                  try {
+                    const parsed = JSON.parse(result.summary.trim());
+                    if (parsed && typeof parsed === 'object') {
+                      result = parsed; // Replace entirely with parsed data
+                    }
+                  } catch { /* keep original */ }
                 }
                 setAiAnalysis({ ...result, _type: analysisType });
               } catch (err) {
