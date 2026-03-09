@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import * as XLSX from 'xlsx';
 import KokomiLoading from './KokomiLoading';
-import { getWeekRange, getAvailableWeeks, getSemesterRanges, getAvailableMonths, getDateRangeForView } from '../lib/weekUtils';
+import { getWeekRange, getAvailableWeeks, getSemesterRanges, getAvailableMonths, getDateRangeForView, getSemesterForMonth } from '../lib/weekUtils';
 
 
 
@@ -523,7 +523,7 @@ export default function StudentManagement() {
           {viewMode === 'month' && (
             <select
               value={selectedMonth}
-              onChange={e => setSelectedMonth(Number(e.target.value))}
+              onChange={e => { const v = Number(e.target.value); setSelectedMonth(v); setSelectedSemester(getSemesterForMonth(v, semester2Start)); }}
               className="filter-select"
               style={{ minWidth: 200 }}
             >

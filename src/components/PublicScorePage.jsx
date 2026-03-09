@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { X, Search, TrendingUp, TrendingDown, Calendar, Star, Users } from 'lucide-react';
 import KokomiLoading from './KokomiLoading';
-import { getAvailableWeeks, getSemesterRanges, getAvailableMonths, getDateRangeForView } from '../lib/weekUtils';
+import { getAvailableWeeks, getSemesterRanges, getAvailableMonths, getDateRangeForView, getSemesterForMonth } from '../lib/weekUtils';
 
 export default function PublicScorePage({ token }) {
   const [loading, setLoading] = useState(true);
@@ -243,7 +243,7 @@ export default function PublicScorePage({ token }) {
             {viewMode === 'month' && (
               <select
                 value={selectedMonth}
-                onChange={e => setSelectedMonth(Number(e.target.value))}
+                onChange={e => { const v = Number(e.target.value); setSelectedMonth(v); setSelectedSemester(getSemesterForMonth(v, semester2Start)); }}
                 style={{
                   padding: '8px 32px 8px 14px', borderRadius: 10,
                   border: '1px solid rgba(99,102,241,0.4)', background: 'rgba(30,41,59,0.9)',

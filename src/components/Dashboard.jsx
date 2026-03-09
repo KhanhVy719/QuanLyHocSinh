@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Users, School, BookOpen, Wifi, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
-import { getWeekRange, getAvailableWeeks, getSemesterRanges, getAvailableMonths, getDateRangeForView } from '../lib/weekUtils';
+import { getWeekRange, getAvailableWeeks, getSemesterRanges, getAvailableMonths, getDateRangeForView, getSemesterForMonth } from '../lib/weekUtils';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement,
   BarElement, Title, Tooltip, Legend, Filler,
@@ -382,7 +382,7 @@ export default function Dashboard() {
           {viewMode === 'month' && (
             <select
               value={selectedMonth}
-              onChange={e => setSelectedMonth(Number(e.target.value))}
+              onChange={e => { const v = Number(e.target.value); setSelectedMonth(v); setSelectedSemester(getSemesterForMonth(v, semester2Start)); }}
               className="filter-select"
               style={{ minWidth: 200 }}
             >

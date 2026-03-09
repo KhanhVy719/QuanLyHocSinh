@@ -125,6 +125,20 @@ export function getMonthRange(offset = 0) {
 }
 
 /**
+ * Determine which semester a month belongs to.
+ * @param {number} monthOffset
+ * @param {string|null} semester2StartStr
+ * @returns {number} 1 or 2
+ */
+export function getSemesterForMonth(monthOffset, semester2StartStr = null) {
+  const range = getMonthRange(monthOffset);
+  const monthMid = new Date(range.start);
+  monthMid.setDate(15); // mid-month
+  const ranges = getSemesterRanges(semester2StartStr);
+  return monthMid >= ranges.hk2.start ? 2 : 1;
+}
+
+/**
  * Get available months for a semester
  * @param {number} semester - 1 or 2
  * @param {string|null} semester2StartStr
