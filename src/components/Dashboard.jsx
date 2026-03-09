@@ -558,8 +558,6 @@ export default function Dashboard() {
             </select>
             <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#374151' }}>⏰ Phạm vi:</span>
             <select id="ai-time-period" defaultValue="hk1" className="filter-select">
-              <option value="week">Tuần hiện tại</option>
-              <option value="month">Tháng này</option>
               <option value="hk1">Học kỳ 1</option>
               <option value="hk2">Học kỳ 2</option>
               <option value="year">Cả năm</option>
@@ -575,14 +573,7 @@ export default function Dashboard() {
                 const period = document.getElementById('ai-time-period')?.value || 'hk1';
                 const analysisType = document.getElementById('ai-analysis-type')?.value || 'scores';
                 let dateStart, dateEnd;
-                if (period === 'week') {
-                  const wr = getCurrentRange();
-                  dateStart = wr.start; dateEnd = wr.end;
-                } else if (period === 'month') {
-                  const now = new Date();
-                  dateStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-                  dateEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
-                } else if (period === 'hk1') {
+                if (period === 'hk1') {
                   dateStart = semesterRanges.hk1.start.toISOString();
                   dateEnd = semesterRanges.hk1.end.toISOString();
                 } else if (period === 'hk2') {
