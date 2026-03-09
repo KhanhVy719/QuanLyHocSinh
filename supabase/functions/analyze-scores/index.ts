@@ -166,24 +166,39 @@ Chỉ phân tích những học sinh CÓ dữ liệu log.`;
       );
     }
 
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.3,
-            maxOutputTokens: 8192,
-          },
-        }),
-      }
-    );
+    const requestBody = JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.3,
+        maxOutputTokens: 8192,
+        responseMimeType: "application/json",
+      },
+    });
 
-    const geminiData = await geminiRes.json();
+    // Try primary model, fallback to secondary if overloaded
+    const models = ["gemini-2.5-flash", "gemini-2.0-flash"];
+    let geminiRes: Response | null = null;
+    let geminiData: any = null;
 
-    if (!geminiRes.ok || geminiData?.error) {
+    for (const model of models) {
+      geminiRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: requestBody,
+        }
+      );
+      geminiData = await geminiRes.json();
+
+      // If success or non-overload error, stop retrying
+      if (geminiRes.ok && !geminiData?.error) break;
+      const errMsg = geminiData?.error?.message || "";
+      if (!errMsg.includes("high demand") && !errMsg.includes("overloaded") && !errMsg.includes("503")) break;
+      // Otherwise try next model
+    }
+
+    if (!geminiRes!.ok || geminiData?.error) {
       return new Response(JSON.stringify({
         declining: [], improving: [], atRisk: [],
         summary: `Lỗi Gemini API: ${geminiData?.error?.message || JSON.stringify(geminiData?.error) || `HTTP ${geminiRes.status}`}`,
@@ -197,15 +212,26 @@ Chỉ phân tích những học sinh CÓ dữ liệu log.`;
 
     let analysis;
     try {
-      const cleaned = aiText.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-      analysis = JSON.parse(cleaned);
+      // Try direct parse first
+      analysis = JSON.parse(aiText.trim());
     } catch {
-      analysis = {
-        declining: [],
-        improving: [],
-        atRisk: [],
-        summary: aiText || `Gemini không trả về dữ liệu. Status: ${geminiRes.status}.`,
-      };
+      try {
+        // Strip markdown code blocks (```json ... ``` or ``` ... ```)
+        let cleaned = aiText.replace(/```[\w]*\s*/g, "").replace(/```/g, "").trim();
+        // If still not valid JSON, try to extract JSON object
+        const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          cleaned = jsonMatch[0];
+        }
+        analysis = JSON.parse(cleaned);
+      } catch {
+        analysis = {
+          declining: [],
+          improving: [],
+          atRisk: [],
+          summary: aiText || `Gemini không trả về dữ liệu. Status: ${geminiRes.status}.`,
+        };
+      }
     }
 
     return new Response(JSON.stringify(analysis), {
