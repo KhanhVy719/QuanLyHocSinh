@@ -596,13 +596,26 @@ export default function Dashboard() {
                   body: { classId: stats.teacherClass, dateStart, dateEnd, analysisType },
                 });
                 if (error) throw error;
-                // Safety net: if Edge Function failed to parse, summary might contain raw JSON
+                // Bulletproof data extraction - handle all possible response formats
                 let result = data || {};
-                if (typeof result.summary === 'string' && result.summary.trim().startsWith('{') && !result.conductRatings && !result.declining) {
-                  try {
-                    const parsed = JSON.parse(result.summary);
-                    result = parsed;
-                  } catch (_e) { /* keep original */ }
+                // Case 1: data itself might be a string
+                if (typeof result === 'string') {
+                  try { result = JSON.parse(result); } catch { result = { summary: result }; }
+                }
+                // Case 2: everything dumped in summary as JSON string
+                if (typeof result.summary === 'string' && !result.conductRatings && !result.declining) {
+                  // Try to find JSON in summary
+                  const raw = result.summary;
+                  const jsonStart = raw.indexOf('{');
+                  if (jsonStart >= 0) {
+                    try {
+                      const cleaned = raw.substring(jsonStart).replace(/```[\w]*\s*/g, '').replace(/```/g, '');
+                      const parsed = JSON.parse(cleaned);
+                      if (parsed.conductRatings || parsed.declining || parsed.summary) {
+                        result = parsed;
+                      }
+                    } catch { /* keep original */ }
+                  }
                 }
                 setAiAnalysis({ ...result, _type: analysisType });
               } catch (err) {
