@@ -596,7 +596,15 @@ export default function Dashboard() {
                   body: { classId: stats.teacherClass, dateStart, dateEnd, analysisType },
                 });
                 if (error) throw error;
-                setAiAnalysis({ ...data, _type: analysisType });
+                // Safety net: if Edge Function failed to parse, summary might contain raw JSON
+                let result = data || {};
+                if (typeof result.summary === 'string' && result.summary.trim().startsWith('{') && !result.conductRatings && !result.declining) {
+                  try {
+                    const parsed = JSON.parse(result.summary);
+                    result = parsed;
+                  } catch (_e) { /* keep original */ }
+                }
+                setAiAnalysis({ ...result, _type: analysisType });
               } catch (err) {
                 setAiAnalysis({ summary: 'Lỗi: ' + (err.message || 'Unknown'), _type: 'scores' });
               }
