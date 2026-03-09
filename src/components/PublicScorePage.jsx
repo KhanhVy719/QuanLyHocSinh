@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { X, Search, TrendingUp, TrendingDown, Calendar, Star, Users } from 'lucide-react';
 import KokomiLoading from './KokomiLoading';
-import { getWeekRange, getAvailableWeeks, getSemesterRanges } from '../lib/weekUtils';
+import { getAvailableWeeks, getSemesterRanges, getAvailableMonths, getDateRangeForView } from '../lib/weekUtils';
 
 export default function PublicScorePage({ token }) {
   const [loading, setLoading] = useState(true);
@@ -17,6 +17,8 @@ export default function PublicScorePage({ token }) {
   const [selectedWeek, setSelectedWeek] = useState(0);
   const [selectedSemester, setSelectedSemester] = useState(null);
   const [semester2Start, setSemester2Start] = useState(null);
+  const [viewMode, setViewMode] = useState('week'); // 'week' | 'month' | 'semester' | 'year'
+  const [selectedMonth, setSelectedMonth] = useState(0);
 
   // Auto-detect current semester
   useEffect(() => {
@@ -36,6 +38,7 @@ export default function PublicScorePage({ token }) {
   }, [classId]);
 
   const weeks = getAvailableWeeks(selectedSemester, semester2Start);
+  const months = getAvailableMonths(selectedSemester, semester2Start);
 
   // Auto-select valid week when semester changes
   useEffect(() => {
@@ -82,7 +85,7 @@ export default function PublicScorePage({ token }) {
       }
 
       const ids = freshStudents.map(s => s.id);
-      const wr = getWeekRange(selectedWeek);
+      const wr = getDateRangeForView(viewMode, viewMode === 'month' ? selectedMonth : selectedWeek, selectedSemester || 1, semester2Start);
       const { data: logs } = await supabase
         .from('score_logs')
         .select('student_id, change')
@@ -105,7 +108,7 @@ export default function PublicScorePage({ token }) {
       setScoreLoading(false);
     }
     refetch();
-  }, [selectedWeek, classId]);
+  }, [selectedWeek, selectedMonth, viewMode, classId, selectedSemester, semester2Start]);
 
   const rankedStudents = useMemo(() => {
     const sorted = [...students].sort((a, b) => b.score - a.score || a.deductions - b.deductions || a.name.localeCompare(b.name));
@@ -130,7 +133,7 @@ export default function PublicScorePage({ token }) {
     setHistoryStudent({ id: student.id, name: student.name, score: student.score });
     setScoreHistory([]);
     setHistoryLoading(true);
-    const wr = getWeekRange(selectedWeek);
+    const wr = getDateRangeForView(viewMode, viewMode === 'month' ? selectedMonth : selectedWeek, selectedSemester || 1, semester2Start);
     const { data } = await supabase
       .from('score_logs').select('*').eq('student_id', student.id).gte('created_at', wr.start).lte('created_at', wr.end).order('created_at', { ascending: false });
     setScoreHistory(data || []);
@@ -208,27 +211,52 @@ export default function PublicScorePage({ token }) {
               <option value={1}>Học kỳ 1</option>
               <option value={2}>Học kỳ 2</option>
             </select>
-            <span style={{ fontSize: '0.85rem', color: '#94A3B8' }}>📅 Tuần:</span>
-            <select
-              value={selectedWeek}
-              onChange={e => setSelectedWeek(Number(e.target.value))}
-              style={{
-                padding: '8px 32px 8px 14px', borderRadius: 10,
-                border: '1px solid rgba(99,102,241,0.4)', background: 'rgba(30,41,59,0.9)',
-                color: '#E2E8F0', fontSize: '0.88rem', fontWeight: 600,
-                cursor: 'pointer', outline: 'none',
-                appearance: 'none',
-                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2394A3B8' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 6l3.5 3.5L11.5 6'/%3E%3C/svg%3E")`,
-                backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center',
-              }}
-            >
-              {weeks.map(w => (
-                <option key={w.offset} value={w.offset}>
-                  {w.isCurrent ? `Tuần hiện tại (${w.label})` : w.label}
-                </option>
+            <span style={{ fontSize: '0.85rem', color: '#94A3B8' }}>📅 Xem theo:</span>
+            <div style={{ display: 'flex', borderRadius: 10, overflow: 'hidden', border: '1px solid rgba(99,102,241,0.4)' }}>
+              {[{ key: 'week', label: 'Tuần' }, { key: 'month', label: 'Tháng' }, { key: 'semester', label: 'Học kỳ' }, { key: 'year', label: 'Cả năm' }].map(m => (
+                <button key={m.key} onClick={() => { setViewMode(m.key); setSelectedWeek(0); setSelectedMonth(0); }} style={{
+                  padding: '8px 14px', border: 'none', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600,
+                  background: viewMode === m.key ? 'rgba(99,102,241,0.8)' : 'rgba(30,41,59,0.9)',
+                  color: viewMode === m.key ? '#fff' : '#94A3B8',
+                  transition: 'all 0.2s',
+                }}>{m.label}</button>
               ))}
-            </select>
-            {selectedWeek !== 0 && (
+            </div>
+            {viewMode === 'week' && (
+              <select
+                value={selectedWeek}
+                onChange={e => setSelectedWeek(Number(e.target.value))}
+                style={{
+                  padding: '8px 32px 8px 14px', borderRadius: 10,
+                  border: '1px solid rgba(99,102,241,0.4)', background: 'rgba(30,41,59,0.9)',
+                  color: '#E2E8F0', fontSize: '0.88rem', fontWeight: 600,
+                  cursor: 'pointer', outline: 'none',
+                }}
+              >
+                {weeks.map(w => (
+                  <option key={w.offset} value={w.offset}>
+                    {w.isCurrent ? `Tuần hiện tại (${w.label})` : w.label}
+                  </option>
+                ))}
+              </select>
+            )}
+            {viewMode === 'month' && (
+              <select
+                value={selectedMonth}
+                onChange={e => setSelectedMonth(Number(e.target.value))}
+                style={{
+                  padding: '8px 32px 8px 14px', borderRadius: 10,
+                  border: '1px solid rgba(99,102,241,0.4)', background: 'rgba(30,41,59,0.9)',
+                  color: '#E2E8F0', fontSize: '0.88rem', fontWeight: 600,
+                  cursor: 'pointer', outline: 'none',
+                }}
+              >
+                {months.map(m => (
+                  <option key={m.offset} value={m.offset}>{m.label}</option>
+                ))}
+              </select>
+            )}
+            {(viewMode === 'week' && selectedWeek !== 0) && (
               <span style={{ fontSize: '0.78rem', color: '#FBBF24', background: 'rgba(251,191,36,0.15)', padding: '4px 12px', borderRadius: 8, fontWeight: 600 }}>
                 ⏳ Đang xem tuần cũ
               </span>

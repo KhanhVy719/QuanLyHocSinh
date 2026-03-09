@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Users, School, BookOpen, Wifi, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
-import { getWeekRange, getAvailableWeeks, getSemesterRanges } from '../lib/weekUtils';
+import { getWeekRange, getAvailableWeeks, getSemesterRanges, getAvailableMonths, getDateRangeForView } from '../lib/weekUtils';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement,
   BarElement, Title, Tooltip, Legend, Filler,
@@ -86,6 +86,8 @@ export default function Dashboard() {
   const [semester2Start, setSemester2Start] = useState(null);
   const [semester2Input, setSemester2Input] = useState('');
   const [semesterSaving, setSemesterSaving] = useState(false);
+  const [viewMode, setViewMode] = useState('week');
+  const [selectedMonth, setSelectedMonth] = useState(0);
 
   // Auto-detect current semester on mount
   useEffect(() => {
@@ -111,6 +113,11 @@ export default function Dashboard() {
 
   const semesterRanges = getSemesterRanges(semester2Start);
   const weeks = getAvailableWeeks(selectedSemester, semester2Start);
+  const months = getAvailableMonths(selectedSemester, semester2Start);
+
+  function getCurrentRange() {
+    return getDateRangeForView(viewMode, viewMode === 'month' ? selectedMonth : selectedWeek, selectedSemester || 1, semester2Start);
+  }
 
   // Auto-select valid week when semester changes
   useEffect(() => {
@@ -193,7 +200,7 @@ export default function Dashboard() {
         if (meStudent?.group_name) {
           const { data: grpStudents } = await supabase.from('students').select('*').eq('class', uData.assigned_class).eq('group_name', meStudent.group_name).order('id');
           const ids = (grpStudents || []).map(s => s.id);
-          const wr = getWeekRange(selectedWeek);
+          const wr = getCurrentRange();
           const { data: logs } = ids.length > 0 ? await supabase.from('score_logs').select('student_id, change').in('student_id', ids).gte('created_at', wr.start).lte('created_at', wr.end) : { data: [] };
           const scoreMap = {};
           const deductMap = {};
@@ -211,7 +218,7 @@ export default function Dashboard() {
       const { data: allStudents2 } = await supabase.from('students').select('id, name, group_name').eq('class', teacherClass);
       if (allStudents2 && allStudents2.length > 0) {
         const ids = allStudents2.map(s => s.id);
-        const wr2 = getWeekRange(selectedWeek);
+        const wr2 = getCurrentRange();
         const { data: logs } = await supabase.from('score_logs').select('student_id, change').in('student_id', ids).gte('created_at', wr2.start).lte('created_at', wr2.end);
         const scoreMap = {};
         const deductMap = {};
@@ -242,7 +249,7 @@ export default function Dashboard() {
 
     setLastUpdate(new Date());
     setScoreLoading(false);
-  }, [user, selectedWeek]);
+  }, [user, selectedWeek, selectedMonth, viewMode, selectedSemester, semester2Start]);
 
   useEffect(() => {
     queueMicrotask(fetchStats);
@@ -347,20 +354,44 @@ export default function Dashboard() {
             <option value={2}>Học kỳ 2</option>
           </select>
 
-          <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#374151', marginLeft: 8 }}>�📅 Tuần:</span>
-          <select
-            value={selectedWeek}
-            onChange={e => setSelectedWeek(Number(e.target.value))}
-            className="filter-select"
-            style={{ minWidth: 200 }}
-          >
-            {weeks.map(w => (
-              <option key={w.offset} value={w.offset}>
-                {w.isCurrent ? `Tuần hiện tại (${w.label})` : w.label}
-              </option>
+          <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#374151', marginLeft: 8 }}>📅 Xem theo:</span>
+          <div style={{ display: 'flex', borderRadius: 10, overflow: 'hidden', border: '1px solid #E5E7EB' }}>
+            {[{ key: 'week', label: 'Tuần' }, { key: 'month', label: 'Tháng' }, { key: 'semester', label: 'Học kỳ' }, { key: 'year', label: 'Cả năm' }].map(m => (
+              <button key={m.key} onClick={() => { setViewMode(m.key); setSelectedWeek(0); setSelectedMonth(0); }} style={{
+                padding: '6px 14px', border: 'none', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600,
+                background: viewMode === m.key ? '#6366F1' : '#F3F4F6',
+                color: viewMode === m.key ? '#fff' : '#6B7280',
+                transition: 'all 0.2s',
+              }}>{m.label}</button>
             ))}
-          </select>
-          {selectedWeek !== 0 && (
+          </div>
+          {viewMode === 'week' && (
+            <select
+              value={selectedWeek}
+              onChange={e => setSelectedWeek(Number(e.target.value))}
+              className="filter-select"
+              style={{ minWidth: 200 }}
+            >
+              {weeks.map(w => (
+                <option key={w.offset} value={w.offset}>
+                  {w.isCurrent ? `Tuần hiện tại (${w.label})` : w.label}
+                </option>
+              ))}
+            </select>
+          )}
+          {viewMode === 'month' && (
+            <select
+              value={selectedMonth}
+              onChange={e => setSelectedMonth(Number(e.target.value))}
+              className="filter-select"
+              style={{ minWidth: 200 }}
+            >
+              {months.map(m => (
+                <option key={m.offset} value={m.offset}>{m.label}</option>
+              ))}
+            </select>
+          )}
+          {(viewMode === 'week' && selectedWeek !== 0) && (
             <span style={{ fontSize: '0.8rem', color: '#D97706', fontWeight: 600, background: '#FEF3C7', padding: '4px 10px', borderRadius: 8 }}>
               ⏳ Đang xem tuần cũ
             </span>
@@ -626,7 +657,7 @@ export default function Dashboard() {
                     <td style={{ fontWeight: 600 }}>{s.id}</td>
                     <td><button onClick={async () => {
                       setHistoryStudent({ id: s.id, name: s.name });
-                      const wrH = getWeekRange(selectedWeek);
+                      const wrH = getCurrentRange();
                       const { data } = await supabase.from('score_logs').select('*').eq('student_id', s.id).gte('created_at', wrH.start).lte('created_at', wrH.end).order('created_at', { ascending: false });
                       setScoreHistory(data || []);
                     }} style={{ background: 'none', border: 'none', color: '#4F46E5', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline', padding: 0, fontSize: 'inherit' }}>{s.name}</button></td>
@@ -674,7 +705,7 @@ export default function Dashboard() {
                     <td style={{ fontWeight: 600 }}>{s.id}</td>
                     <td><button onClick={async () => {
                       setHistoryStudent({ id: s.id, name: s.name });
-                      const wrH2 = getWeekRange(selectedWeek);
+                      const wrH2 = getCurrentRange();
                       const { data } = await supabase.from('score_logs').select('*').eq('student_id', s.id).gte('created_at', wrH2.start).lte('created_at', wrH2.end).order('created_at', { ascending: false });
                       setScoreHistory(data || []);
                     }} style={{ background: 'none', border: 'none', color: '#4F46E5', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline', padding: 0, fontSize: 'inherit' }}>{s.name}</button></td>
@@ -794,7 +825,7 @@ export default function Dashboard() {
                   note: scoreNote || null,
                   score_after: newScore,
                 };
-                if (selectedWeek !== 0) {
+                if (viewMode === 'week' && selectedWeek !== 0) {
                   const wr = getWeekRange(selectedWeek);
                   // Set to Wednesday of that week (midpoint)
                   const mid = new Date(wr.start);

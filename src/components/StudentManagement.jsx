@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import * as XLSX from 'xlsx';
 import KokomiLoading from './KokomiLoading';
-import { getWeekRange, getAvailableWeeks, getSemesterRanges } from '../lib/weekUtils';
+import { getWeekRange, getAvailableWeeks, getSemesterRanges, getAvailableMonths, getDateRangeForView } from '../lib/weekUtils';
 
 
 
@@ -47,6 +47,8 @@ export default function StudentManagement() {
   const [selectedWeek, setSelectedWeek] = useState(0);
   const [selectedSemester, setSelectedSemester] = useState(null);
   const [semester2Start, setSemester2Start] = useState(null);
+  const [viewMode, setViewMode] = useState('week');
+  const [selectedMonth, setSelectedMonth] = useState(0);
 
   // Auto-detect current semester
   useEffect(() => {
@@ -67,6 +69,11 @@ export default function StudentManagement() {
   }, [user]);
 
   const weeks = getAvailableWeeks(selectedSemester, semester2Start);
+  const months = getAvailableMonths(selectedSemester, semester2Start);
+
+  function getCurrentRange() {
+    return getDateRangeForView(viewMode, viewMode === 'month' ? selectedMonth : selectedWeek, selectedSemester || 1, semester2Start);
+  }
 
   // Auto-select valid week when semester changes
   useEffect(() => {
@@ -133,11 +140,11 @@ export default function StudentManagement() {
           setSubjectList(subData || []);
 
           const studentIds = result.map(s => s.id);
-          const wr = getWeekRange(selectedWeek);
+          const wr = getCurrentRange();
           const { data: logs } = await supabase.from('score_logs').select('student_id, change').in('student_id', studentIds).gte('created_at', wr.start).lte('created_at', wr.end);
           const map = {};
           (logs || []).forEach(r => {
-            if (!map[r.student_id]) map[r.student_id] = { khac: 10 };
+            if (!map[r.student_id]) map[r.student_id] = { khac: 0 };
             map[r.student_id].khac += r.change;
           });
           setScoreRecords(map);
@@ -146,7 +153,7 @@ export default function StudentManagement() {
       setLoading(false);
     }
     init();
-  }, [user, leaderGroup, selectedWeek]);
+  }, [user, leaderGroup, selectedWeek, selectedMonth, viewMode, selectedSemester, semester2Start]);
 
   function openAdd() {
     const nextId = generateNextId();
@@ -488,20 +495,44 @@ export default function StudentManagement() {
             <option value={1}>Học kỳ 1</option>
             <option value={2}>Học kỳ 2</option>
           </select>
-          <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#374151', marginLeft: 8 }}>📅 Tuần:</span>
-          <select
-            value={selectedWeek}
-            onChange={e => setSelectedWeek(Number(e.target.value))}
-            className="filter-select"
-            style={{ minWidth: 200 }}
-          >
-            {weeks.map(w => (
-              <option key={w.offset} value={w.offset}>
-                {w.isCurrent ? `Tuần hiện tại (${w.label})` : w.label}
-              </option>
+          <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#374151', marginLeft: 8 }}>📅 Xem theo:</span>
+          <div style={{ display: 'flex', borderRadius: 10, overflow: 'hidden', border: '1px solid #E5E7EB' }}>
+            {[{ key: 'week', label: 'Tuần' }, { key: 'month', label: 'Tháng' }, { key: 'semester', label: 'Học kỳ' }, { key: 'year', label: 'Cả năm' }].map(m => (
+              <button key={m.key} onClick={() => { setViewMode(m.key); setSelectedWeek(0); setSelectedMonth(0); }} style={{
+                padding: '6px 14px', border: 'none', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600,
+                background: viewMode === m.key ? '#6366F1' : '#F3F4F6',
+                color: viewMode === m.key ? '#fff' : '#6B7280',
+                transition: 'all 0.2s',
+              }}>{m.label}</button>
             ))}
-          </select>
-          {selectedWeek !== 0 && (
+          </div>
+          {viewMode === 'week' && (
+            <select
+              value={selectedWeek}
+              onChange={e => setSelectedWeek(Number(e.target.value))}
+              className="filter-select"
+              style={{ minWidth: 200 }}
+            >
+              {weeks.map(w => (
+                <option key={w.offset} value={w.offset}>
+                  {w.isCurrent ? `Tuần hiện tại (${w.label})` : w.label}
+                </option>
+              ))}
+            </select>
+          )}
+          {viewMode === 'month' && (
+            <select
+              value={selectedMonth}
+              onChange={e => setSelectedMonth(Number(e.target.value))}
+              className="filter-select"
+              style={{ minWidth: 200 }}
+            >
+              {months.map(m => (
+                <option key={m.offset} value={m.offset}>{m.label}</option>
+              ))}
+            </select>
+          )}
+          {(viewMode === 'week' && selectedWeek !== 0) && (
             <span style={{ fontSize: '0.8rem', color: '#D97706', fontWeight: 600, background: '#FEF3C7', padding: '4px 10px', borderRadius: 8 }}>
               ⏳ Chỉ xem — không chỉnh sửa được
             </span>
@@ -562,7 +593,7 @@ export default function StudentManagement() {
                   <td>{user?.role === 'totruong'
                     ? <button onClick={async () => {
                         setHistoryStudent({ id: s.id, name: s.name });
-                        const wr = getWeekRange(selectedWeek);
+                        const wr = getCurrentRange();
                         const { data } = await supabase.from('score_logs').select('*').eq('student_id', s.id).gte('created_at', wr.start).lte('created_at', wr.end).order('created_at', { ascending: false });
                         setScoreHistory(data || []);
                       }} style={{ background: 'none', border: 'none', color: '#4F46E5', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline', padding: 0, fontSize: 'inherit' }}>{s.name}</button>
@@ -1058,7 +1089,7 @@ export default function StudentManagement() {
                   note: fullNote || null,
                   score_after: newScore,
                 };
-                if (selectedWeek !== 0) {
+                if (viewMode === 'week' && selectedWeek !== 0) {
                   const wr = getWeekRange(selectedWeek);
                   const mid = new Date(wr.start);
                   mid.setDate(mid.getDate() + 3);
