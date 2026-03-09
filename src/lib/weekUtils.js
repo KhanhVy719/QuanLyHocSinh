@@ -132,22 +132,20 @@ export function getMonthRange(offset = 0) {
  */
 export function getAvailableMonths(semester = null, semester2StartStr = null) {
   const months = [];
+  // Show all months in the academic year (Sep to Jun)
+  const ranges = getSemesterRanges(semester2StartStr);
+  const yearStart = ranges.hk1.start;
+  const yearEnd = ranges.hk2.end;
+
   for (let i = 0; i >= -11; i--) {
     const range = getMonthRange(i);
     const monthStart = new Date(range.start);
     const monthEnd = new Date(range.end);
 
-    if (semester) {
-      const ranges = getSemesterRanges(semester2StartStr);
-      const semRange = semester === 1 ? ranges.hk1 : ranges.hk2;
-      if (monthEnd >= semRange.start && monthStart <= semRange.end) {
-        months.push({ offset: i, ...range });
-      }
-      if (monthEnd < semRange.start) break;
-    } else {
+    if (monthEnd >= yearStart && monthStart <= yearEnd) {
       months.push({ offset: i, ...range });
-      if (months.length >= 6) break;
     }
+    if (monthEnd < yearStart) break;
   }
   return months;
 }
