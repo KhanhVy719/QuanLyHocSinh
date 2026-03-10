@@ -14,6 +14,7 @@ export default function PublicScorePage({ token }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [historyLoading, setHistoryLoading] = useState(false);
   const [scoreLoading, setScoreLoading] = useState(false);
+  const [conductMap, setConductMap] = useState({});
   const [selectedWeek, setSelectedWeek] = useState(0);
   const [selectedSemester, setSelectedSemester] = useState(null);
   const [semester2Start, setSemester2Start] = useState(null);
@@ -86,12 +87,10 @@ export default function PublicScorePage({ token }) {
 
       const ids = freshStudents.map(s => s.id);
       const wr = getDateRangeForView(viewMode, viewMode === 'month' ? selectedMonth : selectedWeek, selectedSemester || 1, semester2Start);
-      const { data: logs } = await supabase
-        .from('score_logs')
-        .select('student_id, change')
-        .in('student_id', ids)
-        .gte('created_at', wr.start)
-        .lte('created_at', wr.end);
+      const [{ data: logs }, { data: conductData }] = await Promise.all([
+        supabase.from('score_logs').select('student_id, change').in('student_id', ids).gte('created_at', wr.start).lte('created_at', wr.end),
+        supabase.from('conduct_ratings').select('student_id, rating, semester').in('student_id', ids),
+      ]);
 
       const scoreMap = {};
       const deductMap = {};
@@ -99,6 +98,13 @@ export default function PublicScorePage({ token }) {
         scoreMap[r.student_id] = (scoreMap[r.student_id] ?? 0) + r.change;
         if (r.change < 0) deductMap[r.student_id] = (deductMap[r.student_id] || 0) + r.change;
       });
+      // Build conduct map: { studentId: { 1: 'Tốt', 2: 'Khá' } }
+      const cMap = {};
+      (conductData || []).forEach(c => {
+        if (!cMap[c.student_id]) cMap[c.student_id] = {};
+        cMap[c.student_id][c.semester] = c.rating;
+      });
+      setConductMap(cMap);
       setStudents(freshStudents.map(s => ({
         ...s,
         score: scoreMap[s.id] ?? 0,
@@ -375,6 +381,26 @@ export default function PublicScorePage({ token }) {
                   <div className="public-group-col" style={{ color: '#94A3B8', fontSize: '0.85rem', flexShrink: 0 }}>
                     {s.group_name || '—'}
                   </div>
+
+                  {/* Conduct Badge */}
+                  {conductMap[s.id] && (
+                    <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                      {[1, 2].map(sem => {
+                        const r = conductMap[s.id]?.[sem];
+                        if (!r) return null;
+                        const colors = { 'Tốt': '#34D399', 'Khá': '#60A5FA', 'Trung bình': '#FBBF24', 'Yếu': '#F87171' };
+                        return (
+                          <span key={sem} style={{
+                            padding: '2px 8px', borderRadius: 6,
+                            background: `${colors[r]}20`, color: colors[r],
+                            fontSize: '0.7rem', fontWeight: 700, whiteSpace: 'nowrap',
+                          }} title={`HK${sem}: ${r}`}>
+                            HK{sem}: {r}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
 
                   {/* Score */}
                   <div style={{
