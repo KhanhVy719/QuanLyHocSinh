@@ -125,7 +125,6 @@ export default function ConductRating() {
         semester,
         rating: ratings[s.id],
         note: notes[s.id] || '',
-        rated_by: user?.id || null,
         updated_at: new Date().toISOString(),
       }));
 
