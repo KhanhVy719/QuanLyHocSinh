@@ -392,26 +392,25 @@ export default function PublicScorePage({ token }) {
                       </td>
                       {/* Conduct */}
                       <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                        {conductMap[s.id] ? (
-                          <div style={{ display: 'flex', gap: 4, justifyContent: 'center', flexWrap: 'wrap' }}>
-                            {[1, 2].map(sem => {
-                              const r = conductMap[s.id]?.[sem];
-                              if (!r) return null;
-                              const colors = { 'Tốt': '#34D399', 'Khá': '#60A5FA', 'Trung bình': '#FBBF24', 'Yếu': '#F87171' };
-                              return (
+                        {(() => {
+                          const semesters = (viewMode === 'year') ? [1, 2] : [selectedSemester || 1];
+                          const entries = semesters.map(sem => ({ sem, r: conductMap[s.id]?.[sem] })).filter(e => e.r);
+                          if (entries.length === 0) return <span style={{ color: '#475569', fontSize: '0.8rem' }}>—</span>;
+                          const colors = { 'Tốt': '#34D399', 'Khá': '#60A5FA', 'Trung bình': '#FBBF24', 'Yếu': '#F87171' };
+                          return (
+                            <div style={{ display: 'flex', gap: 4, justifyContent: 'center', flexWrap: 'wrap' }}>
+                              {entries.map(({ sem, r }) => (
                                 <span key={sem} style={{
                                   padding: '3px 10px', borderRadius: 6,
                                   background: `${colors[r]}20`, color: colors[r],
                                   fontSize: '0.72rem', fontWeight: 700, whiteSpace: 'nowrap',
                                 }}>
-                                  HK{sem}: {r}
+                                  {semesters.length > 1 ? `HK${sem}: ` : ''}{r}
                                 </span>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          <span style={{ color: '#475569', fontSize: '0.8rem' }}>—</span>
-                        )}
+                              ))}
+                            </div>
+                          );
+                        })()}
                       </td>
                       {/* Score */}
                       <td style={{
