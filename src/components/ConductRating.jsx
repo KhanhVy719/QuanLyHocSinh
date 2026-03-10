@@ -97,12 +97,15 @@ export default function ConductRating() {
   // Auto-classify all unrated students
   const autoClassify = () => {
     const newRatings = { ...ratings };
+    let count = 0;
     students.forEach(s => {
       if (!newRatings[s.id]) {
         newRatings[s.id] = classifyConduct(s.score);
+        count++;
       }
     });
     setRatings(newRatings);
+    setSaveMsg(count > 0 ? `🤖 Đã tự động xếp ${count} học sinh chưa có xếp loại.` : '🤖 Tất cả đã có xếp loại rồi.');
   };
 
   // Auto-classify ALL students (override)
@@ -112,6 +115,7 @@ export default function ConductRating() {
       newRatings[s.id] = classifyConduct(s.score);
     });
     setRatings(newRatings);
+    setSaveMsg(`🔄 Đã xếp lại tất cả ${students.length} học sinh theo điểm thi đua.`);
   };
 
   // Save all ratings
@@ -236,8 +240,8 @@ export default function ConductRating() {
       {saveMsg && (
         <div style={{
           padding: '8px 16px', borderRadius: 8, marginBottom: 12,
-          background: saveMsg.startsWith('✅') ? '#D1FAE5' : '#FEE2E2',
-          color: saveMsg.startsWith('✅') ? '#059669' : '#DC2626',
+          background: saveMsg.startsWith('✅') ? '#D1FAE5' : saveMsg.startsWith('🤖') || saveMsg.startsWith('🔄') ? '#DBEAFE' : '#FEE2E2',
+          color: saveMsg.startsWith('✅') ? '#059669' : saveMsg.startsWith('🤖') || saveMsg.startsWith('🔄') ? '#2563EB' : '#DC2626',
           fontSize: '0.88rem', fontWeight: 600,
         }}>
           {saveMsg}
