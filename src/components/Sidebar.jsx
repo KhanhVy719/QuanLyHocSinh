@@ -1,12 +1,13 @@
 import {
   LayoutDashboard, Users, School,
-  BookOpen, LogOut, UserCog, Menu, X,
+  BookOpen, LogOut, UserCog, Menu, X, ClipboardCheck,
 } from 'lucide-react';
 import { useAuth, ROLE_PERMISSIONS, ROLE_LABELS } from '../context/AuthContext';
 
 const allNavItems = [
   { key: 'dashboard', label: 'Tổng quan', icon: LayoutDashboard },
   { key: 'students', label: 'Quản lý học sinh', icon: Users },
+  { key: 'conduct', label: 'Xếp hạnh kiểm', icon: ClipboardCheck },
   { key: 'classes', label: 'Quản lý lớp học', icon: School },
   { key: 'subjects', label: 'Quản lý môn học', icon: BookOpen },
   { key: 'assignments', label: 'Phân công', icon: UserCog },

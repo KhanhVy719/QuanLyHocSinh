@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Hệ thống quản lý học sinh hiện đại - Quản lý thông tin, điểm số, hạnh kiểm và báo cáo thống kê" />
+  <title>Quản Lý Học Sinh - Hệ thống quản lý thông minh</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    /* ===== RESET & BASE ===== */
+    *, *::before, *::after {
+      margin: 0; padding: 0; box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #4f6bed;
+      --primary-dark: #3b50c9;
+      --primary-deeper: #2d3fa6;
+      --primary-light: #6b83f0;
+      --accent: #8b5cf6;
+      --accent-light: #a78bfa;
+      --bg: #0b0f1a;
+      --bg-card: rgba(255, 255, 255, 0.04);
+      --bg-card-hover: rgba(255, 255, 255, 0.08);
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --border-glass: rgba(255, 255, 255, 0.08);
+      --glow-primary: rgba(79, 107, 237, 0.4);
+      --glow-accent: rgba(139, 92, 246, 0.3);
+    }
+
+    html {
+      font-size: 16px;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text-primary);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ===== ANIMATED BACKGROUND ===== */
+    .bg-gradient {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .bg-gradient::before {
+      content: '';
+      position: absolute;
+      width: 800px;
+      height: 800px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--glow-primary) 0%, transparent 70%);
+      top: -200px;
+      right: -200px;
+      animation: floatOrb1 20s ease-in-out infinite;
+    }
+
+    .bg-gradient::after {
+      content: '';
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--glow-accent) 0%, transparent 70%);
+      bottom: -150px;
+      left: -150px;
+      animation: floatOrb2 25s ease-in-out infinite;
+    }
+
+    @keyframes floatOrb1 {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(-80px, 60px) scale(1.1); }
+      66% { transform: translate(40px, -40px) scale(0.95); }
+    }
+
+    @keyframes floatOrb2 {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(60px, -80px) scale(1.05); }
+      66% { transform: translate(-40px, 40px) scale(0.9); }
+    }
+
+    /* Grid pattern overlay */
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background-image: 
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 60px 60px;
+    }
+
+    /* ===== NAVBAR ===== */
+    .navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      padding: 0 40px;
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(20px) saturate(180%);
+      background: rgba(11, 15, 26, 0.7);
+      border-bottom: 1px solid var(--border-glass);
+      transition: all 0.3s ease;
+    }
+
+    .navbar.scrolled {
+      background: rgba(11, 15, 26, 0.92);
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+
+    .nav-logo-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 4px 15px var(--glow-primary);
+    }
+
+    .nav-logo-text {
+      font-size: 1.2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #fff, var(--text-secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.02em;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .nav-link {
+      padding: 8px 16px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .nav-link:hover {
+      color: var(--text-primary);
+      background: rgba(255,255,255,0.05);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 24px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      border: none;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: white;
+      box-shadow: 0 4px 20px var(--glow-primary);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px var(--glow-primary);
+    }
+
+    .btn-ghost {
+      background: rgba(255,255,255,0.06);
+      color: var(--text-primary);
+      border: 1px solid var(--border-glass);
+      backdrop-filter: blur(10px);
+    }
+
+    .btn-ghost:hover {
+      background: rgba(255,255,255,0.12);
+      border-color: rgba(255,255,255,0.15);
+    }
+
+    .btn-large {
+      padding: 16px 40px;
+      font-size: 1.05rem;
+      border-radius: 16px;
+    }
+
+    /* ===== HERO ===== */
+    .hero {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 120px 40px 80px;
+    }
+
+    .hero-inner {
+      max-width: 900px;
+      text-align: center;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px 6px 8px;
+      border-radius: 50px;
+      background: rgba(79, 107, 237, 0.12);
+      border: 1px solid rgba(79, 107, 237, 0.25);
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--primary-light);
+      margin-bottom: 32px;
+      animation: fadeInUp 0.8s ease forwards;
+    }
+
+    .hero-badge .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--primary);
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 var(--glow-primary); }
+      50% { opacity: 0.7; box-shadow: 0 0 0 6px transparent; }
+    }
+
+    .hero h1 {
+      font-size: clamp(2.8rem, 6vw, 4.5rem);
+      font-weight: 900;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      margin-bottom: 24px;
+      animation: fadeInUp 0.8s ease 0.1s forwards;
+      opacity: 0;
+    }
+
+    .hero h1 .gradient-text {
+      background: linear-gradient(135deg, var(--primary-light), var(--accent-light), #f472b6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      background-size: 200% 200%;
+      animation: gradientShift 5s ease infinite;
+    }
+
+    @keyframes gradientShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    .hero p {
+      font-size: clamp(1.05rem, 2vw, 1.25rem);
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto 48px;
+      line-height: 1.7;
+      animation: fadeInUp 0.8s ease 0.2s forwards;
+      opacity: 0;
+    }
+
+    .hero-cta {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      animation: fadeInUp 0.8s ease 0.3s forwards;
+      opacity: 0;
+      flex-wrap: wrap;
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===== PREVIEW SECTION ===== */
+    .preview-section {
+      position: relative;
+      z-index: 1;
+      padding: 0 40px 100px;
+    }
+
+    .preview-wrapper {
+      max-width: 1100px;
+      margin: 0 auto;
+      position: relative;
+      animation: fadeInUp 0.8s ease 0.5s forwards;
+      opacity: 0;
+    }
+
+    .preview-glow {
+      position: absolute;
+      inset: -40px;
+      background: radial-gradient(ellipse at center, var(--glow-primary) 0%, transparent 70%);
+      border-radius: 40px;
+      z-index: -1;
+      opacity: 0.5;
+    }
+
+    .preview-frame {
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.03);
+      box-shadow: 
+        0 25px 50px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(255,255,255,0.05),
+        inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+
+    .preview-topbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 20px;
+      background: rgba(255,255,255,0.03);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .preview-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .preview-dot.red { background: #ff5f57; }
+    .preview-dot.yellow { background: #febc2e; }
+    .preview-dot.green { background: #28c840; }
+
+    .preview-url {
+      flex: 1;
+      margin-left: 12px;
+      padding: 6px 16px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.05);
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+
+    .preview-frame img {
+      width: 100%;
+      display: block;
+      object-fit: cover;
+    }
+
+    /* ===== STATS STRIP ===== */
+    .stats-strip {
+      position: relative;
+      z-index: 1;
+      padding: 80px 40px;
+    }
+
+    .stats-strip-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .stat-item {
+      text-align: center;
+      padding: 32px 20px;
+      border-radius: 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-glass);
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+    }
+
+    .stat-item:hover {
+      background: var(--bg-card-hover);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    }
+
+    .stat-number {
+      font-size: 2.5rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--primary-light), var(--accent-light));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.1;
+      margin-bottom: 8px;
+    }
+
+    .stat-label {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    /* ===== HIGHLIGHTS ===== */
+    .highlights {
+      position: relative;
+      z-index: 1;
+      padding: 80px 40px 120px;
+    }
+
+    .highlights-inner {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .highlights h2 {
+      text-align: center;
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+    }
+
+    .highlights .subtitle {
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+      margin-bottom: 56px;
+    }
+
+    .highlight-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .highlight-card {
+      padding: 32px 24px;
+      border-radius: 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-glass);
+      backdrop-filter: blur(10px);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .highlight-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--primary), var(--accent), transparent);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+
+    .highlight-card:hover {
+      background: var(--bg-card-hover);
+      transform: translateY(-6px);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+      border-color: rgba(255,255,255,0.12);
+    }
+
+    .highlight-card:hover::before {
+      opacity: 1;
+    }
+
+    .highlight-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+
+    .highlight-icon.blue {
+      background: rgba(79, 107, 237, 0.15);
+      box-shadow: 0 4px 15px rgba(79, 107, 237, 0.1);
+    }
+    .highlight-icon.purple {
+      background: rgba(139, 92, 246, 0.15);
+      box-shadow: 0 4px 15px rgba(139, 92, 246, 0.1);
+    }
+    .highlight-icon.green {
+      background: rgba(16, 185, 129, 0.15);
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.1);
+    }
+    .highlight-icon.pink {
+      background: rgba(244, 114, 182, 0.15);
+      box-shadow: 0 4px 15px rgba(244, 114, 182, 0.1);
+    }
+    .highlight-icon.orange {
+      background: rgba(249, 115, 22, 0.15);
+      box-shadow: 0 4px 15px rgba(249, 115, 22, 0.1);
+    }
+    .highlight-icon.cyan {
+      background: rgba(6, 182, 212, 0.15);
+      box-shadow: 0 4px 15px rgba(6, 182, 212, 0.1);
+    }
+
+    .highlight-card h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      letter-spacing: -0.01em;
+    }
+
+    .highlight-card p {
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* ===== CTA SECTION ===== */
+    .cta-section {
+      position: relative;
+      z-index: 1;
+      padding: 80px 40px 100px;
+    }
+
+    .cta-box {
+      max-width: 700px;
+      margin: 0 auto;
+      text-align: center;
+      padding: 60px 40px;
+      border-radius: 28px;
+      background: linear-gradient(135deg, rgba(79,107,237,0.15), rgba(139,92,246,0.15));
+      border: 1px solid rgba(79,107,237,0.2);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta-box::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 30% 50%, var(--glow-primary) 0%, transparent 60%);
+      opacity: 0.3;
+    }
+
+    .cta-box h2 {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 16px;
+      position: relative;
+    }
+
+    .cta-box p {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+      margin-bottom: 32px;
+      position: relative;
+    }
+
+    .cta-box .btn {
+      position: relative;
+    }
+
+    /* ===== FOOTER ===== */
+    .footer {
+      position: relative;
+      z-index: 1;
+      padding: 32px 40px;
+      border-top: 1px solid var(--border-glass);
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .footer a {
+      color: var(--primary-light);
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+
+    /* ===== SCROLL REVEAL ===== */
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      .navbar {
+        padding: 0 20px;
+        height: 60px;
+      }
+
+      .nav-link { display: none; }
+
+      .hero {
+        padding: 100px 20px 60px;
+        min-height: auto;
+      }
+
+      .hero-cta {
+        flex-direction: column;
+      }
+
+      .btn-large {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .preview-section {
+        padding: 0 16px 60px;
+      }
+
+      .preview-frame {
+        border-radius: 14px;
+      }
+
+      .stats-strip { padding: 60px 20px; }
+      .stats-strip-inner {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+
+      .highlights { padding: 60px 20px 80px; }
+      .highlight-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+
+      .cta-section { padding: 40px 20px 60px; }
+      .cta-box { padding: 40px 24px; border-radius: 20px; }
+
+      .footer { padding: 24px 20px; }
+    }
+
+    @media (max-width: 480px) {
+      .hero h1 { font-size: 2rem; }
+      .hero p { font-size: 0.95rem; }
+      .stat-number { font-size: 2rem; }
+    }
+
+    /* ===== PARTICLE FLOAT ===== */
+    .particles {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .particle {
+      position: absolute;
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      animation: floatParticle linear infinite;
+    }
+
+    @keyframes floatParticle {
+      0% { transform: translateY(100vh) scale(0); opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Animated Background -->
+  <div class="bg-gradient"></div>
+  <div class="bg-grid"></div>
+  <div class="particles" id="particles"></div>
+
+  <!-- Navbar -->
+  <nav class="navbar" id="navbar">
+    <a href="#" class="nav-logo">
+      <div class="nav-logo-icon">🎓</div>
+      <span class="nav-logo-text">QLHS</span>
+    </a>
+    <div class="nav-actions">
+      <a href="#features" class="nav-link">Tính năng</a>
+      <a href="#preview" class="nav-link">Giao diện</a>
+      <a href="#" class="btn btn-primary" onclick="goLogin()">Đăng nhập</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="hero-badge">
+        <span class="dot"></span>
+        Phiên bản mới nhất 2025–2026
+      </div>
+      <h1>
+        Hệ thống<br />
+        <span class="gradient-text">Quản Lý Học Sinh</span><br />
+        thông minh
+      </h1>
+      <p>
+        Giải pháp toàn diện giúp giáo viên và tổ trưởng theo dõi, đánh giá
+        và quản lý học sinh một cách hiệu quả với giao diện hiện đại.
+      </p>
+      <div class="hero-cta">
+        <a href="#" class="btn btn-primary btn-large" onclick="goLogin()">
+          🚀 Đăng nhập ngay
+        </a>
+        <a href="#preview" class="btn btn-ghost btn-large">
+          👀 Xem giao diện
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section class="stats-strip reveal">
+    <div class="stats-strip-inner">
+      <div class="stat-item">
+        <div class="stat-number" data-target="100" data-suffix="%">0%</div>
+        <div class="stat-label">Theo dõi thời gian thực</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number" data-target="3" data-suffix=" vai trò">0</div>
+        <div class="stat-label">Admin · Giáo viên · Tổ trưởng</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number" data-target="24" data-suffix="/7">0</div>
+        <div class="stat-label">Truy cập mọi lúc, mọi nơi</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Preview -->
+  <section class="preview-section reveal" id="preview">
+    <div class="preview-wrapper">
+      <div class="preview-glow"></div>
+      <div class="preview-frame">
+        <div class="preview-topbar">
+          <span class="preview-dot red"></span>
+          <span class="preview-dot yellow"></span>
+          <span class="preview-dot green"></span>
+          <span class="preview-url">qlhocsinh.app/dashboard</span>
+        </div>
+        <img src="dashboard-preview.png" alt="Giao diện Dashboard - Hệ thống Quản lý Học sinh" loading="lazy" />
+      </div>
+    </div>
+  </section>
+
+  <!-- Highlights -->
+  <section class="highlights reveal" id="features">
+    <div class="highlights-inner">
+      <h2>Tại sao chọn hệ thống này?</h2>
+      <p class="subtitle">Được thiết kế dành riêng cho nhu cầu quản lý lớp học Việt Nam</p>
+
+      <div class="highlight-grid">
+        <div class="highlight-card">
+          <div class="highlight-icon blue">⚡</div>
+          <h3>Cập nhật thời gian thực</h3>
+          <p>Điểm thi đua được đồng bộ ngay lập tức, không cần tải lại trang.</p>
+        </div>
+        <div class="highlight-card">
+          <div class="highlight-icon purple">🤖</div>
+          <h3>Phân tích bằng AI</h3>
+          <p>Nhận xét và đánh giá tự động từ trí tuệ nhân tạo, tiết kiệm thời gian.</p>
+        </div>
+        <div class="highlight-card">
+          <div class="highlight-icon green">📱</div>
+          <h3>Responsive mọi thiết bị</h3>
+          <p>Sử dụng thoải mái trên điện thoại, máy tính bảng và desktop.</p>
+        </div>
+        <div class="highlight-card">
+          <div class="highlight-icon pink">🔐</div>
+          <h3>Bảo mật cao</h3>
+          <p>Phân quyền chi tiết cho admin, giáo viên và tổ trưởng.</p>
+        </div>
+        <div class="highlight-card">
+          <div class="highlight-icon orange">📊</div>
+          <h3>Biểu đồ trực quan</h3>
+          <p>Thống kê bằng biểu đồ đẹp mắt, dễ hiểu và chuyên nghiệp.</p>
+        </div>
+        <div class="highlight-card">
+          <div class="highlight-icon cyan">🔗</div>
+          <h3>Chia sẻ dễ dàng</h3>
+          <p>Tạo link công khai để phụ huynh và học sinh xem điểm thuận tiện.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section reveal">
+    <div class="cta-box">
+      <h2>Sẵn sàng bắt đầu? 🚀</h2>
+      <p>Đăng nhập ngay để trải nghiệm hệ thống quản lý học sinh thế hệ mới.</p>
+      <a href="#" class="btn btn-primary btn-large" onclick="goLogin()">Đăng nhập ngay</a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>© 2025–2026 Hệ thống Quản Lý Học Sinh. Made with ❤️</p>
+  </footer>
+
+  <script>
+    // ===== NAVBAR SCROLL =====
+    const navbar = document.getElementById('navbar');
+    window.addEventListener('scroll', () => {
+      navbar.classList.toggle('scrolled', window.scrollY > 50);
+    });
+
+    // ===== SCROLL REVEAL =====
+    const revealElements = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.15 });
+
+    revealElements.forEach(el => observer.observe(el));
+
+    // ===== NUMBER COUNTER ANIMATION =====
+    const statNumbers = document.querySelectorAll('.stat-number[data-target]');
+    const counterObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && !entry.target.dataset.animated) {
+          entry.target.dataset.animated = 'true';
+          const target = parseInt(entry.target.dataset.target);
+          const suffix = entry.target.dataset.suffix || '';
+          const duration = 2000;
+          const start = performance.now();
+
+          function update(now) {
+            const elapsed = now - start;
+            const progress = Math.min(elapsed / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            const current = Math.round(target * eased);
+            entry.target.textContent = current + suffix;
+            if (progress < 1) requestAnimationFrame(update);
+          }
+          requestAnimationFrame(update);
+        }
+      });
+    }, { threshold: 0.5 });
+
+    statNumbers.forEach(el => counterObserver.observe(el));
+
+    // ===== PARTICLES =====
+    const particleContainer = document.getElementById('particles');
+    for (let i = 0; i < 30; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      p.style.left = Math.random() * 100 + '%';
+      p.style.animationDuration = (8 + Math.random() * 15) + 's';
+      p.style.animationDelay = Math.random() * 10 + 's';
+      p.style.width = p.style.height = (2 + Math.random() * 3) + 'px';
+      particleContainer.appendChild(p);
+    }
+
+    // ===== LOGIN REDIRECT =====
+    function goLogin() {
+      // Điều hướng tới app chính, thay URL phù hợp
+      // window.location.href = '/';
+      alert('Chuyển đến trang đăng nhập!\n\n(Cập nhật URL khi tích hợp vào dự án chính)');
+    }
+
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+      a.addEventListener('click', (e) => {
+        const target = document.querySelector(a.getAttribute('href'));
+        if (target) {
+          e.preventDefault();
+          target.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+    });
+  </script>
+</body>
+</html>

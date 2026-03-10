@@ -7,6 +7,7 @@ import StudentManagement from './components/StudentManagement';
 import ClassManagement from './components/ClassManagement';
 import SubjectManagement from './components/SubjectManagement';
 import AssignmentPage from './components/AssignmentPage';
+import ConductRating from './components/ConductRating';
 import PublicScorePage from './components/PublicScorePage';
 
 const pages = {
@@ -15,6 +16,7 @@ const pages = {
   classes: ClassManagement,
   subjects: SubjectManagement,
   assignments: AssignmentPage,
+  conduct: ConductRating,
 };
 
 function AppContent() {

@@ -13,7 +13,7 @@ const AuthContext = createContext(null);
 // Which nav items each role can see
 export const ROLE_PERMISSIONS = {
   admin: ['dashboard', 'students', 'classes', 'subjects', 'assignments'],
-  giaovien: ['dashboard', 'students', 'subjects', 'assignments'],
+  giaovien: ['dashboard', 'students', 'conduct', 'subjects', 'assignments'],
   totruong: ['dashboard', 'students', 'subjects'],
 };
 
