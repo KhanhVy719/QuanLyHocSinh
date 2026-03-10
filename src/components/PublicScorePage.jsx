@@ -345,72 +345,86 @@ export default function PublicScorePage({ token }) {
               <p>Không tìm thấy học sinh phù hợp.</p>
             </div>
           ) : (
-            <div>
-              {filteredStudents.map((s, i) => (
-                <div
-                  key={s.id}
-                  onClick={() => handleViewHistory(s)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 12,
-                    padding: '14px 16px',
-                    borderTop: i > 0 ? '1px solid #1E293B' : 'none',
-                    background: i % 2 === 0 ? 'rgba(30,41,59,0)' : 'rgba(51,65,85,0.3)',
-                    cursor: 'pointer', transition: 'background 0.15s',
-                  }}
-                  onMouseOver={e => e.currentTarget.style.background = 'rgba(99,102,241,0.08)'}
-                  onMouseOut={e => e.currentTarget.style.background = i % 2 === 0 ? 'rgba(30,41,59,0)' : 'rgba(51,65,85,0.3)'}
-                >
-                  {/* Rank */}
-                  <div style={{
-                    width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontWeight: 800, fontSize: '0.9rem',
-                    background: s.rank <= 3 ? 'rgba(251,191,36,0.15)' : 'rgba(100,116,139,0.2)',
-                    color: s.rank <= 3 ? '#FBBF24' : '#94A3B8',
-                  }}>
-                    {s.rank}
-                  </div>
-
-                  {/* Avatar + Name */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, color: '#F1F5F9', fontSize: '0.95rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</div>
-                    <div style={{ color: '#64748B', fontSize: '0.78rem' }}>ID: {s.id}</div>
-                  </div>
-
-                  {/* Group - hide on very small screens via className */}
-                  <div className="public-group-col" style={{ color: '#94A3B8', fontSize: '0.85rem', flexShrink: 0 }}>
-                    {s.group_name || '—'}
-                  </div>
-
-                  {/* Conduct Badge */}
-                  {conductMap[s.id] && (
-                    <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-                      {[1, 2].map(sem => {
-                        const r = conductMap[s.id]?.[sem];
-                        if (!r) return null;
-                        const colors = { 'Tốt': '#34D399', 'Khá': '#60A5FA', 'Trung bình': '#FBBF24', 'Yếu': '#F87171' };
-                        return (
-                          <span key={sem} style={{
-                            padding: '2px 8px', borderRadius: 6,
-                            background: `${colors[r]}20`, color: colors[r],
-                            fontSize: '0.7rem', fontWeight: 700, whiteSpace: 'nowrap',
-                          }} title={`HK${sem}: ${r}`}>
-                            HK{sem}: {r}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {/* Score */}
-                  <div style={{
-                    fontWeight: 800, fontSize: '1.1rem', flexShrink: 0, width: 50, textAlign: 'right',
-                    color: s.score >= 8 ? '#34D399' : s.score >= 5 ? '#FBBF24' : '#F87171',
-                  }}>
-                    {s.score}
-                  </div>
-                </div>
-              ))}
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: '2px solid #334155' }}>
+                    <th style={{ padding: '14px 16px', textAlign: 'center', color: '#94A3B8', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', width: 60 }}>Hạng</th>
+                    <th style={{ padding: '14px 16px', textAlign: 'left', color: '#94A3B8', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Họ và tên</th>
+                    <th className="public-group-col" style={{ padding: '14px 16px', textAlign: 'center', color: '#94A3B8', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', width: 80 }}>Tổ</th>
+                    <th style={{ padding: '14px 16px', textAlign: 'center', color: '#94A3B8', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', width: 180 }}>Hạnh kiểm</th>
+                    <th style={{ padding: '14px 16px', textAlign: 'center', color: '#94A3B8', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', width: 70 }}>Điểm</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredStudents.map((s, i) => (
+                    <tr
+                      key={s.id}
+                      onClick={() => handleViewHistory(s)}
+                      style={{
+                        borderTop: '1px solid rgba(51,65,85,0.5)',
+                        background: i % 2 === 0 ? 'transparent' : 'rgba(51,65,85,0.2)',
+                        cursor: 'pointer', transition: 'background 0.15s',
+                      }}
+                      onMouseOver={e => e.currentTarget.style.background = 'rgba(99,102,241,0.08)'}
+                      onMouseOut={e => e.currentTarget.style.background = i % 2 === 0 ? 'transparent' : 'rgba(51,65,85,0.2)'}
+                    >
+                      {/* Rank */}
+                      <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                        <div style={{
+                          width: 32, height: 32, borderRadius: '50%', margin: '0 auto',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontWeight: 800, fontSize: '0.85rem',
+                          background: s.rank <= 3 ? 'rgba(251,191,36,0.15)' : 'rgba(100,116,139,0.2)',
+                          color: s.rank <= 3 ? '#FBBF24' : '#94A3B8',
+                        }}>
+                          {s.rank}
+                        </div>
+                      </td>
+                      {/* Name */}
+                      <td style={{ padding: '12px 16px' }}>
+                        <div style={{ fontWeight: 600, color: '#F1F5F9', fontSize: '0.95rem' }}>{s.name}</div>
+                        <div style={{ color: '#64748B', fontSize: '0.75rem' }}>{s.id}</div>
+                      </td>
+                      {/* Group */}
+                      <td className="public-group-col" style={{ padding: '12px 16px', textAlign: 'center', color: '#94A3B8', fontSize: '0.85rem' }}>
+                        {s.group_name || '—'}
+                      </td>
+                      {/* Conduct */}
+                      <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                        {conductMap[s.id] ? (
+                          <div style={{ display: 'flex', gap: 4, justifyContent: 'center', flexWrap: 'wrap' }}>
+                            {[1, 2].map(sem => {
+                              const r = conductMap[s.id]?.[sem];
+                              if (!r) return null;
+                              const colors = { 'Tốt': '#34D399', 'Khá': '#60A5FA', 'Trung bình': '#FBBF24', 'Yếu': '#F87171' };
+                              return (
+                                <span key={sem} style={{
+                                  padding: '3px 10px', borderRadius: 6,
+                                  background: `${colors[r]}20`, color: colors[r],
+                                  fontSize: '0.72rem', fontWeight: 700, whiteSpace: 'nowrap',
+                                }}>
+                                  HK{sem}: {r}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <span style={{ color: '#475569', fontSize: '0.8rem' }}>—</span>
+                        )}
+                      </td>
+                      {/* Score */}
+                      <td style={{
+                        padding: '12px 16px', textAlign: 'center',
+                        fontWeight: 800, fontSize: '1.1rem',
+                        color: s.score >= 8 ? '#34D399' : s.score >= 5 ? '#FBBF24' : '#F87171',
+                      }}>
+                        {s.score}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
