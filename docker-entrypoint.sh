@@ -10,19 +10,20 @@ fi
 
 # Use PORT env var if set (Railway), otherwise default to 80
 PORT=${PORT:-80}
-echo "Starting on PORT=${PORT}..."
 
-# Remove template to prevent nginx:alpine auto-processing with empty vars
+# Clean up any existing configs to prevent conflicts
 rm -f /etc/nginx/templates/default.conf.template
 rm -f /etc/nginx/conf.d/default.conf
 
+echo "=== Config: PORT=${PORT}, SUPABASE_URL=${SUPABASE_URL:-[not set]} ==="
+
 # Check if cert is readable (not just exists)
 if [ -f "$CERT_PATH" ] && [ -r "$CERT_PATH" ]; then
-  echo "SSL cert found and readable, starting HTTPS mode with Supabase proxy..."
+  echo "Mode: HTTPS + Supabase proxy"
   envsubst '${DOMAIN} ${SUPABASE_URL} ${SUPABASE_HOST} ${SUPABASE_ANON_KEY}' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf
 
 elif [ -n "$SUPABASE_URL" ]; then
-  echo "SSL cert not found, starting HTTP mode with Supabase proxy..."
+  echo "Mode: HTTP + Supabase proxy"
 
   cat > /etc/nginx/conf.d/default.conf << NGINXEOF
 server {
@@ -31,11 +32,8 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
-    # REST API proxy
     location /supaapi/ {
-        if (\$http_x_app_request = '') {
-            return 403 '{"error":"Forbidden"}';
-        }
+        if (\$http_x_app_request = '') { return 403 '{"error":"Forbidden"}'; }
         proxy_pass ${SUPABASE_URL}/rest/v1/;
         proxy_set_header Host ${SUPABASE_HOST};
         proxy_set_header apikey ${SUPABASE_ANON_KEY};
@@ -44,11 +42,8 @@ server {
         proxy_ssl_server_name on;
     }
 
-    # Auth API proxy (fetch calls)
     location /supaauth/ {
-        if (\$http_x_app_request = '') {
-            return 403 '{"error":"Forbidden"}';
-        }
+        if (\$http_x_app_request = '') { return 403 '{"error":"Forbidden"}'; }
         proxy_pass ${SUPABASE_URL}/auth/v1/;
         proxy_set_header Host ${SUPABASE_HOST};
         proxy_set_header apikey ${SUPABASE_ANON_KEY};
@@ -56,7 +51,6 @@ server {
         proxy_ssl_server_name on;
     }
 
-    # Auth API proxy (browser redirects - Google OAuth)
     location /auth/v1/ {
         proxy_pass ${SUPABASE_URL}/auth/v1/;
         proxy_set_header Host ${SUPABASE_HOST};
@@ -65,7 +59,6 @@ server {
         proxy_ssl_server_name on;
     }
 
-    # Realtime (WebSocket) proxy
     location /suparealtime/ {
         proxy_pass ${SUPABASE_URL}/realtime/v1/;
         proxy_set_header Host ${SUPABASE_HOST};
@@ -77,22 +70,16 @@ server {
         proxy_read_timeout 86400;
     }
 
-    # Storage proxy
     location /supastorage/ {
-        if (\$http_x_app_request = '') {
-            return 403 '{"error":"Forbidden"}';
-        }
+        if (\$http_x_app_request = '') { return 403 '{"error":"Forbidden"}'; }
         proxy_pass ${SUPABASE_URL}/storage/v1/;
         proxy_set_header Host ${SUPABASE_HOST};
         proxy_set_header apikey ${SUPABASE_ANON_KEY};
         proxy_ssl_server_name on;
     }
 
-    # Edge Functions proxy
     location /supafunc/ {
-        if (\$http_x_app_request = '') {
-            return 403 '{"error":"Forbidden"}';
-        }
+        if (\$http_x_app_request = '') { return 403 '{"error":"Forbidden"}'; }
         proxy_pass ${SUPABASE_URL}/functions/v1/;
         proxy_set_header Host ${SUPABASE_HOST};
         proxy_set_header apikey ${SUPABASE_ANON_KEY};
@@ -101,12 +88,10 @@ server {
         proxy_ssl_server_name on;
     }
 
-    # SPA fallback
     location / {
         try_files \$uri \$uri/ /index.html;
     }
 
-    # Cache static assets
     location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
         expires 1y;
         add_header Cache-Control "public, immutable";
@@ -119,7 +104,7 @@ server {
 NGINXEOF
 
 else
-  echo "No SUPABASE_URL set, starting simple static mode (Railway/simple deploy)..."
+  echo "Mode: Simple static (Railway)"
 
   cat > /etc/nginx/conf.d/default.conf << NGINXEOF
 server {
@@ -144,5 +129,9 @@ server {
 NGINXEOF
 fi
 
+echo "=== Generated nginx config ==="
+cat /etc/nginx/conf.d/default.conf
+echo "=== Testing nginx config ==="
+nginx -t
+echo "=== Starting nginx ==="
 exec nginx -g "daemon off;"
-

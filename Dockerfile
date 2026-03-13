@@ -8,13 +8,16 @@ ARG VITE_SUPABASE_URL
 ARG VITE_SUPABASE_ANON_KEY
 RUN npm run build
 
-# Production stage
+# Production stage - use plain nginx, NOT nginx's default entrypoint
 FROM nginx:alpine
+# Remove nginx default config and entrypoint scripts
+RUN rm -f /etc/nginx/conf.d/default.conf && \
+    rm -rf /docker-entrypoint.d/ && \
+    rm -rf /etc/nginx/templates/
 COPY --from=build /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/templates/default.conf.template
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN sed -i 's/\r$//' /docker-entrypoint.sh && chmod +x /docker-entrypoint.sh
 RUN mkdir -p /var/www/certbot
 ENV PORT=80
 EXPOSE 80 443
-ENTRYPOINT ["/docker-entrypoint.sh"]
+CMD ["/docker-entrypoint.sh"]
