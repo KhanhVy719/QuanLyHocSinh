@@ -1,12 +1,14 @@
 # BÁO CÁO SẢN PHẨM STEM
+
 ## **HỆ THỐNG QUẢN LÝ HỌC SINH THÔNG MINH**
+
 ### Ứng dụng công nghệ Web và Trí tuệ Nhân tạo trong quản lý thi đua – hạnh kiểm học sinh
 
 ---
 
-**Nhóm thực hiện:** Nguyễn Phạm Khánh Vy  
+**Nhóm thực hiện:** Phạm Lê Khánh Vy  
 **Lớp:** 10A4  
-**Năm học:** 2025 – 2026  
+**Năm học:** 2025 – 2026
 
 ---
 
@@ -43,34 +45,37 @@ Xuất phát từ thực tế trên, nhóm đã phát triển **"Hệ thống Qu
 
 ## 2. Mục tiêu sản phẩm
 
-| Mục tiêu | Mô tả |
-|----------|-------|
-| **Số hóa quy trình** | Chuyển đổi toàn bộ việc chấm điểm thi đua, xếp hạnh kiểm từ giấy tờ sang nền tảng web |
-| **Tự động hóa** | Tự động tính toán, xếp hạng, thống kê – giảm 90% thời gian so với phương pháp thủ công |
-| **Minh bạch** | Cung cấp trang công khai để phụ huynh và học sinh theo dõi điểm số thời gian thực |
-| **Phân tích thông minh** | Tích hợp AI (Google Gemini) để phân tích xu hướng, phát hiện học sinh cần hỗ trợ |
-| **Dễ sử dụng** | Giao diện thân thiện, responsive trên cả máy tính và điện thoại |
-| **Phân quyền** | Hệ thống 3 cấp quyền: Quản trị viên – Giáo viên – Tổ trưởng |
+| Mục tiêu                 | Mô tả                                                                                  |
+| ------------------------ | -------------------------------------------------------------------------------------- |
+| **Số hóa quy trình**     | Chuyển đổi toàn bộ việc chấm điểm thi đua, xếp hạnh kiểm từ giấy tờ sang nền tảng web  |
+| **Tự động hóa**          | Tự động tính toán, xếp hạng, thống kê – giảm 90% thời gian so với phương pháp thủ công |
+| **Minh bạch**            | Cung cấp trang công khai để phụ huynh và học sinh theo dõi điểm số thời gian thực      |
+| **Phân tích thông minh** | Tích hợp AI (Ollama) để phân tích xu hướng, phát hiện học sinh cần hỗ trợ       |
+| **Dễ sử dụng**           | Giao diện thân thiện, responsive trên cả máy tính và điện thoại                        |
+| **Phân quyền**           | Hệ thống 3 cấp quyền: Quản trị viên – Giáo viên – Tổ trưởng                            |
 
 ---
 
 ## 3. Yếu tố STEM trong sản phẩm
 
 ### 🔬 Science (Khoa học)
+
 - **Thu thập dữ liệu có hệ thống:** Mỗi lần chấm điểm đều ghi lại thời gian, lý do, người chấm – tạo thành bộ dữ liệu khoa học có thể kiểm chứng.
 - **Phân tích xu hướng:** Sử dụng phương pháp phân tích chuỗi thời gian để nhận diện xu hướng tăng/giảm điểm của từng học sinh qua các tuần, tháng, học kỳ.
 - **Phân loại dựa trên logic:** Thuật toán xếp hạnh kiểm dựa trên ngưỡng điểm được xác định bằng phương pháp khoa học (Tốt ≥ 0, Khá ≥ -3, TB ≥ -7, Yếu < -7).
 - **Quy trình nghiên cứu:** Sản phẩm được phát triển theo quy trình: Nghiên cứu thực trạng → Đặt giả thuyết → Thiết kế giải pháp → Thử nghiệm → Đánh giá → Cải tiến.
 
 ### 💻 Technology (Công nghệ)
+
 - **Nền tảng web hiện đại:** Sử dụng React.js 19, Vite, Supabase (PostgreSQL), tích hợp realtime database.
-- **Trí tuệ nhân tạo:** Tích hợp Google Gemini AI để phân tích điểm thi đua và hạnh kiểm, đưa ra nhận xét thông minh.
+- **Trí tuệ nhân tạo:** Tích hợp Ollama (mô hình AI chạy cục bộ) để phân tích điểm thi đua và hạnh kiểm, đưa ra nhận xét thông minh.
 - **Real-time:** Dữ liệu cập nhật tức thì giữa các thiết bị nhờ công nghệ WebSocket (Supabase Realtime).
 - **Cloud Computing:** Triển khai trên nền tảng đám mây, truy cập mọi lúc mọi nơi qua trình duyệt web.
 - **Bảo mật:** Hệ thống đăng nhập an toàn với mã hóa mật khẩu, Row Level Security (RLS) trên cơ sở dữ liệu.
 - **Docker Container:** Đóng gói ứng dụng bằng Docker để triển khai đồng nhất trên mọi máy chủ.
 
 ### ⚙️ Engineering (Kỹ thuật)
+
 - **Kiến trúc Client–Server:** Frontend (React) giao tiếp với Backend (Supabase) qua REST API và WebSocket.
 - **Thiết kế cơ sở dữ liệu quan hệ:** 8 bảng dữ liệu được chuẩn hóa (students, classes, subjects, score_logs, conduct_ratings, users, public_links, semester_settings) với khóa chính, khóa ngoại, ràng buộc duy nhất.
 - **Mô hình lai (Hybrid):** Kết hợp tính toán phía máy chủ (server-side) cho dữ liệu chính xác và AI cho phân tích ngữ nghĩa.
@@ -79,6 +84,7 @@ Xuất phát từ thực tế trên, nhóm đã phát triển **"Hệ thống Qu
 - **Quy trình phát triển phần mềm:** Áp dụng quy trình Agile, quản lý mã nguồn bằng Git/GitHub, triển khai liên tục (CI/CD).
 
 ### 📐 Mathematics (Toán học)
+
 - **Thuật toán xếp hạng:** Sắp xếp học sinh theo điểm tổng, xử lý trường hợp đồng hạng bằng tiêu chí phụ (tổng điểm trừ, tên theo bảng chữ cái).
 - **Thống kê mô tả:** Tính tổng điểm, điểm trung bình theo tổ, theo lớp; đếm số lượng mỗi loại hạnh kiểm.
 - **Phân tích chuỗi thời gian:** Biểu đồ đường (line chart) thể hiện xu hướng điểm và số lượng học sinh theo thời gian, sử dụng thang đo trục thời gian tuần/tháng/học kỳ.
@@ -95,11 +101,11 @@ Xuất phát từ thực tế trên, nhóm đã phát triển **"Hệ thống Qu
 
 ### 4.2. Đối tượng sử dụng
 
-| Vai trò | Quyền hạn |
-|---------|-----------|
-| **Quản trị viên (Admin)** | Quản lý toàn bộ: học sinh, lớp, môn học, phân công giáo viên |
-| **Giáo viên chủ nhiệm** | Chấm điểm thi đua, xếp hạnh kiểm, phân tích AI, tạo link công khai |
-| **Tổ trưởng lớp** | Xem và chấm điểm các bạn trong tổ mình |
+| Vai trò                   | Quyền hạn                                                          |
+| ------------------------- | ------------------------------------------------------------------ |
+| **Quản trị viên (Admin)** | Quản lý toàn bộ: học sinh, lớp, môn học, phân công giáo viên       |
+| **Giáo viên chủ nhiệm**   | Chấm điểm thi đua, xếp hạnh kiểm, phân tích AI, tạo link công khai |
+| **Tổ trưởng lớp**         | Xem và chấm điểm các bạn trong tổ mình                             |
 
 ### 4.3. Quy trình hoạt động
 
@@ -138,27 +144,27 @@ Chia sẻ qua link công khai → Phụ huynh & HS theo dõi
 │              BACKEND (Server)                    │
 │  Supabase (PostgreSQL + Auth + Realtime)         │
 │  ─────────────────────────────────────────────── │
-│  Edge Functions (Deno) + Google Gemini AI API    │
+│  Edge Functions (Deno) + Ollama AI API            │
 └──────────────────────────────────────────────────┘
 ```
 
 ### 5.2. Bảng công nghệ chi tiết
 
-| Thành phần | Công nghệ | Phiên bản | Vai trò |
-|-----------|-----------|-----------|---------|
-| Frontend Framework | React.js | 19.2 | Xây dựng giao diện người dùng |
-| Build Tool | Vite | 8.0 | Đóng gói và tối ưu mã nguồn |
-| Database | PostgreSQL (Supabase) | 15 | Lưu trữ dữ liệu quan hệ |
-| Realtime Engine | Supabase Realtime | 2.x | Đồng bộ dữ liệu thời gian thực |
-| AI Engine | Google Gemini | 2.0 Flash | Phân tích thông minh |
-| Serverless Functions | Deno (Edge Functions) | 1.x | Xử lý logic AI phía server |
-| Biểu đồ | Chart.js | 4.5 | Vẽ biểu đồ xu hướng điểm |
-| Icons | Lucide React | 0.575 | Hệ thống biểu tượng |
-| Xuất Excel | SheetJS (xlsx) | 0.18 | Xuất dữ liệu ra file Excel |
-| Container | Docker | 24.x | Đóng gói và triển khai |
-| Version Control | Git + GitHub | — | Quản lý mã nguồn |
-| Ngôn ngữ | JavaScript (ES2024) | — | Ngôn ngữ lập trình chính |
-| CSS | Vanilla CSS | — | Thiết kế giao diện |
+| Thành phần           | Công nghệ             | Phiên bản | Vai trò                        |
+| -------------------- | --------------------- | --------- | ------------------------------ |
+| Frontend Framework   | React.js              | 19.2      | Xây dựng giao diện người dùng  |
+| Build Tool           | Vite                  | 8.0       | Đóng gói và tối ưu mã nguồn    |
+| Database             | PostgreSQL (Supabase) | 15        | Lưu trữ dữ liệu quan hệ        |
+| Realtime Engine      | Supabase Realtime     | 2.x       | Đồng bộ dữ liệu thời gian thực |
+| AI Engine            | Ollama                | Latest    | Phân tích thông minh           |
+| Serverless Functions | Deno (Edge Functions) | 1.x       | Xử lý logic AI phía server     |
+| Biểu đồ              | Chart.js              | 4.5       | Vẽ biểu đồ xu hướng điểm       |
+| Icons                | Lucide React          | 0.575     | Hệ thống biểu tượng            |
+| Xuất Excel           | SheetJS (xlsx)        | 0.18      | Xuất dữ liệu ra file Excel     |
+| Container            | Docker                | 24.x      | Đóng gói và triển khai         |
+| Version Control      | Git + GitHub          | —         | Quản lý mã nguồn               |
+| Ngôn ngữ             | JavaScript (ES2024)   | —         | Ngôn ngữ lập trình chính       |
+| CSS                  | Vanilla CSS           | —         | Thiết kế giao diện             |
 
 ---
 
@@ -168,16 +174,16 @@ Chia sẻ qua link công khai → Phụ huynh & HS theo dõi
 
 Hệ thống gồm **8 bảng dữ liệu** chính:
 
-| Bảng | Mô tả | Số cột |
-|------|--------|-------|
-| `students` | Thông tin học sinh (mã, tên, lớp, tổ, trạng thái) | 7 |
-| `classes` | Danh sách lớp học | 3 |
-| `subjects` | Danh sách môn học | 3 |
-| `score_logs` | Nhật ký chấm điểm (ai chấm, thay đổi, lý do, thời gian) | 8 |
-| `conduct_ratings` | Xếp loại hạnh kiểm (Tốt/Khá/TB/Yếu) theo học kỳ | 8 |
-| `users` | Tài khoản người dùng (tên, mật khẩu mã hóa, vai trò) | 7 |
-| `public_links` | Liên kết chia sẻ công khai bảng điểm | 5 |
-| `semester_settings` | Cấu hình ngày bắt đầu học kỳ 2 | 3 |
+| Bảng                | Mô tả                                                   | Số cột |
+| ------------------- | ------------------------------------------------------- | ------ |
+| `students`          | Thông tin học sinh (mã, tên, lớp, tổ, trạng thái)       | 7      |
+| `classes`           | Danh sách lớp học                                       | 3      |
+| `subjects`          | Danh sách môn học                                       | 3      |
+| `score_logs`        | Nhật ký chấm điểm (ai chấm, thay đổi, lý do, thời gian) | 8      |
+| `conduct_ratings`   | Xếp loại hạnh kiểm (Tốt/Khá/TB/Yếu) theo học kỳ         | 8      |
+| `users`             | Tài khoản người dùng (tên, mật khẩu mã hóa, vai trò)    | 7      |
+| `public_links`      | Liên kết chia sẻ công khai bảng điểm                    | 5      |
+| `semester_settings` | Cấu hình ngày bắt đầu học kỳ 2                          | 3      |
 
 ### 6.2. Mô hình phân quyền
 
@@ -201,6 +207,7 @@ Hệ thống gồm **8 bảng dữ liệu** chính:
 ## 7. Các chức năng chính
 
 ### 7.1. Dashboard Tổng quan
+
 - Thống kê tổng số học sinh, lớp, môn học
 - Biểu đồ xu hướng số lượng học sinh theo tháng (Line Chart với animation)
 - Bộ lọc theo: **Tuần / Tháng / Học kỳ / Cả năm**
@@ -208,6 +215,7 @@ Hệ thống gồm **8 bảng dữ liệu** chính:
 - Cập nhật thời gian thực (real-time)
 
 ### 7.2. Quản lý Học sinh
+
 - Thêm/sửa/xóa học sinh (CRUD đầy đủ)
 - Phân tổ (Tổ 1, 2, 3, 4)
 - Tìm kiếm theo tên, mã HS
@@ -216,12 +224,14 @@ Hệ thống gồm **8 bảng dữ liệu** chính:
 - Xem lịch sử điểm chi tiết từng HS
 
 ### 7.3. Chấm điểm Thi đua
+
 - Cộng/trừ điểm nhanh với lý do
 - Xếp hạng tự động theo điểm
 - Bảng xếp hạng tổ (điểm TB, tổng điểm trừ)
 - Lịch sử chấm điểm có timestamp
 
 ### 7.4. Xếp hạnh kiểm ⭐ (Mới)
+
 - Giao diện chuyên biệt với 2 tab: HK1 / HK2
 - **Tự động xếp loại** dựa trên điểm thi đua:
   - Điểm ≥ 0: **Tốt** 🌟
@@ -234,7 +244,8 @@ Hệ thống gồm **8 bảng dữ liệu** chính:
 - Lưu hàng loạt vào cơ sở dữ liệu
 
 ### 7.5. Phân tích AI 🤖
-- Tích hợp **Google Gemini 2.0 Flash** 
+
+- Tích hợp **Ollama** (AI chạy cục bộ, bảo mật dữ liệu)
 - Phân tích 2 loại:
   - **Điểm thi đua:** Phát hiện HS giảm sút, tiến bộ, cần cảnh báo
   - **Hạnh kiểm:** Thống kê phân bố, nhận xét xu hướng chung
@@ -244,6 +255,7 @@ Hệ thống gồm **8 bảng dữ liệu** chính:
 - Hỗ trợ chọn phạm vi: Tuần / Tháng / HK1 / HK2 / Cả năm
 
 ### 7.6. Trang công khai 🌐
+
 - Giáo viên tạo **link chia sẻ** bảng điểm
 - Giao diện dark mode premium
 - Top 3 học sinh dạng podium
@@ -253,6 +265,7 @@ Hệ thống gồm **8 bảng dữ liệu** chính:
 - **Không cần đăng nhập** → phụ huynh truy cập dễ dàng
 
 ### 7.7. Quản lý Lớp, Môn, Phân công (Admin)
+
 - CRUD lớp học (tên lớp, khối)
 - CRUD môn học (tên, mã)
 - Phân công giáo viên chủ nhiệm cho lớp
@@ -262,16 +275,16 @@ Hệ thống gồm **8 bảng dữ liệu** chính:
 
 ## 8. Tính sáng tạo và độc đáo
 
-| STT | Yếu tố sáng tạo | Mô tả |
-|-----|-----------------|-------|
-| 1 | **AI phân tích** | Là một trong số ít ứng dụng quản lý trường học tích hợp AI để phân tích xu hướng điểm và đưa ra cảnh báo sớm |
-| 2 | **Mô hình Hybrid** | Sáng tạo kết hợp tính toán server-side (chính xác) với AI (nhận xét ngữ nghĩa) – giải quyết vấn đề AI trả dữ liệu sai |
-| 3 | **Real-time** | Cập nhật tức thì – khi GV chấm điểm, tổ trưởng thấy ngay trên thiết bị của mình |
-| 4 | **Link công khai** | Ý tưởng tạo trang chia sẻ không cần đăng nhập, giúp phụ huynh theo dõi dễ dàng |
-| 5 | **Responsive** | Hoạt động tốt trên điện thoại – phù hợp thực tế khi GV thường chấm điểm trên mobile |
-| 6 | **Tự động xếp HK** | Phân loại hạnh kiểm tự động dựa trên điểm thi đua – tiết kiệm thời gian cuối kỳ |
-| 7 | **Xuất Excel** | Hỗ trợ nhập/xuất dữ liệu Excel – tương thích với quy trình hiện có |
-| 8 | **Animation** | Biểu đồ có hiệu ứng progressive reveal – nâng cao trải nghiệm người dùng |
+| STT | Yếu tố sáng tạo    | Mô tả                                                                                                                 |
+| --- | ------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| 1   | **AI phân tích**   | Là một trong số ít ứng dụng quản lý trường học tích hợp AI để phân tích xu hướng điểm và đưa ra cảnh báo sớm          |
+| 2   | **Mô hình Hybrid** | Sáng tạo kết hợp tính toán server-side (chính xác) với AI (nhận xét ngữ nghĩa) – giải quyết vấn đề AI trả dữ liệu sai |
+| 3   | **Real-time**      | Cập nhật tức thì – khi GV chấm điểm, tổ trưởng thấy ngay trên thiết bị của mình                                       |
+| 4   | **Link công khai** | Ý tưởng tạo trang chia sẻ không cần đăng nhập, giúp phụ huynh theo dõi dễ dàng                                        |
+| 5   | **Responsive**     | Hoạt động tốt trên điện thoại – phù hợp thực tế khi GV thường chấm điểm trên mobile                                   |
+| 6   | **Tự động xếp HK** | Phân loại hạnh kiểm tự động dựa trên điểm thi đua – tiết kiệm thời gian cuối kỳ                                       |
+| 7   | **Xuất Excel**     | Hỗ trợ nhập/xuất dữ liệu Excel – tương thích với quy trình hiện có                                                    |
+| 8   | **Animation**      | Biểu đồ có hiệu ứng progressive reveal – nâng cao trải nghiệm người dùng                                              |
 
 ---
 
@@ -281,19 +294,21 @@ Hệ thống gồm **8 bảng dữ liệu** chính:
 
 Sản phẩm đã được **triển khai thử nghiệm** tại lớp 10A4 với kết quả:
 
-| Tiêu chí | Trước khi dùng | Sau khi dùng | Cải thiện |
-|----------|----------------|--------------|-----------|
-| Thời gian chấm điểm thi đua | 15–20 phút/ngày | 2–3 phút/ngày | **85% nhanh hơn** |
-| Thời gian tổng hợp cuối tuần | 30–45 phút | Tự động, 0 phút | **100% tự động** |
-| Xếp hạnh kiểm cuối kỳ | 1–2 giờ | 1 phút (tự động) | **99% nhanh hơn** |
-| Sai sót khi tính điểm | 3–5 lỗi/tuần | 0 lỗi | **Loại bỏ hoàn toàn** |
-| Phụ huynh theo dõi được | Không | Có (link công khai) | **Minh bạch 100%** |
+| Tiêu chí                     | Trước khi dùng  | Sau khi dùng        | Cải thiện             |
+| ---------------------------- | --------------- | ------------------- | --------------------- |
+| Thời gian chấm điểm thi đua  | 15–20 phút/ngày | 2–3 phút/ngày       | **85% nhanh hơn**     |
+| Thời gian tổng hợp cuối tuần | 30–45 phút      | Tự động, 0 phút     | **100% tự động**      |
+| Xếp hạnh kiểm cuối kỳ        | 1–2 giờ         | 1 phút (tự động)    | **99% nhanh hơn**     |
+| Sai sót khi tính điểm        | 3–5 lỗi/tuần    | 0 lỗi               | **Loại bỏ hoàn toàn** |
+| Phụ huynh theo dõi được      | Không           | Có (link công khai) | **Minh bạch 100%**    |
 
 ### 9.2. Trong gia đình
+
 - Phụ huynh truy cập link công khai để theo dõi điểm thi đua và hạnh kiểm con em theo **thời gian thực**.
 - Phát hiện sớm học sinh có xu hướng giảm sút để can thiệp kịp thời.
 
 ### 9.3. Trong cộng đồng
+
 - Mô hình có thể **nhân rộng** cho mọi trường THPT.
 - Mã nguồn mở, miễn phí – khuyến khích cộng đồng cùng phát triển.
 - Giải pháp công nghệ cho cuộc sống bền vững: giảm giấy tờ, tiết kiệm tài nguyên.
@@ -303,12 +318,14 @@ Sản phẩm đã được **triển khai thử nghiệm** tại lớp 10A4 vớ
 ## 10. An toàn và thân thiện môi trường
 
 ### 10.1. An toàn
+
 - **Bảo mật dữ liệu:** Mật khẩu được mã hóa, cơ sở dữ liệu áp dụng Row Level Security (RLS).
 - **Phân quyền nghiêm ngặt:** Mỗi vai trò chỉ truy cập đúng dữ liệu cần thiết.
 - **Không thu thập thông tin cá nhân nhạy cảm** ngoài tên và lớp.
 - **Sản phẩm phần mềm:** Không sử dụng vật liệu vật lý, không có nguy cơ cháy nổ hay ô nhiễm.
 
 ### 10.2. Thân thiện môi trường
+
 - **Giảm sử dụng giấy:** Thay thế sổ chấm điểm giấy, phiếu đánh giá, bảng xếp hạng in ấn.
 - **Ước tính tiết kiệm:** Mỗi lớp giảm ~200 tờ giấy/năm cho sổ điểm thi đua.
 - **Nền tảng đám mây:** Không cần máy chủ vật lý riêng, tận dụng hạ tầng chia sẻ.
@@ -318,13 +335,13 @@ Sản phẩm đã được **triển khai thử nghiệm** tại lớp 10A4 vớ
 
 ## 11. Hướng phát triển
 
-| Giai đoạn | Nội dung | Thời gian dự kiến |
-|-----------|----------|-------------------|
-| **Ngắn hạn** | Thêm tính năng gửi thông báo qua email/Zalo khi HS bị cảnh báo | 1–2 tháng |
-| **Trung hạn** | Tích hợp quản lý điểm học tập (GPA), xếp loại học lực | 3–4 tháng |
-| **Trung hạn** | Ứng dụng di động (PWA) để cài đặt trên điện thoại | 3–4 tháng |
-| **Dài hạn** | Mở rộng cho toàn trường, hỗ trợ đa lớp, đa năm học | 6–12 tháng |
-| **Dài hạn** | Dashboard cho Ban Giám Hiệu: so sánh thi đua giữa các lớp | 6–12 tháng |
+| Giai đoạn     | Nội dung                                                       | Thời gian dự kiến |
+| ------------- | -------------------------------------------------------------- | ----------------- |
+| **Ngắn hạn**  | Thêm tính năng gửi thông báo qua email/Zalo khi HS bị cảnh báo | 1–2 tháng         |
+| **Trung hạn** | Tích hợp quản lý điểm học tập (GPA), xếp loại học lực          | 3–4 tháng         |
+| **Trung hạn** | Ứng dụng di động (PWA) để cài đặt trên điện thoại              | 3–4 tháng         |
+| **Dài hạn**   | Mở rộng cho toàn trường, hỗ trợ đa lớp, đa năm học             | 6–12 tháng        |
+| **Dài hạn**   | Dashboard cho Ban Giám Hiệu: so sánh thi đua giữa các lớp      | 6–12 tháng        |
 
 ---
 
@@ -333,7 +350,7 @@ Sản phẩm đã được **triển khai thử nghiệm** tại lớp 10A4 vớ
 **"Hệ thống Quản lý Học sinh Thông minh"** là sản phẩm STEM ứng dụng công nghệ web hiện đại và trí tuệ nhân tạo để giải quyết một bài toán thực tiễn trong môi trường giáo dục. Sản phẩm thể hiện đầy đủ 4 yếu tố STEM:
 
 - **S (Khoa học):** Thu thập, phân tích dữ liệu có hệ thống; phân loại theo ngưỡng khoa học.
-- **T (Công nghệ):** React.js, Supabase, AI Gemini, Docker, Real-time WebSocket.
+- **T (Công nghệ):** React.js, Supabase, Ollama AI, Docker, Real-time WebSocket.
 - **E (Kỹ thuật):** Kiến trúc Client-Server, CSDL quan hệ, mô hình Hybrid, responsive design.
 - **M (Toán học):** Thuật toán xếp hạng, thống kê mô tả, phân tích chuỗi thời gian, hàm phân loại.
 
@@ -345,11 +362,11 @@ Sản phẩm đã được triển khai thử nghiệm thực tế và chứng m
 
 1. React.js Documentation – https://react.dev
 2. Supabase Documentation – https://supabase.com/docs
-3. Google Gemini AI – https://ai.google.dev
+3. Ollama – https://ollama.com
 4. Chart.js Documentation – https://www.chartjs.org
 5. Thông tư 58/2011/TT-BGDĐT – Quy chế đánh giá, xếp loại học sinh THPT
 6. Docker Documentation – https://docs.docker.com
 
 ---
 
-*Báo cáo được hoàn thành ngày 13/03/2026*
+_Báo cáo được hoàn thành ngày 13/03/2026_
