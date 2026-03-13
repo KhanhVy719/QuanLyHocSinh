@@ -4,32 +4,27 @@ set -e
 CERT_PATH="/etc/letsencrypt/live/${DOMAIN}/fullchain.pem"
 
 # Extract Supabase host from URL (remove https://)
-export SUPABASE_HOST=$(echo "$SUPABASE_URL" | sed 's|https://||')
+if [ -n "$SUPABASE_URL" ]; then
+  export SUPABASE_HOST=$(echo "$SUPABASE_URL" | sed 's|https://||')
+fi
+
+# Use PORT env var if set (Railway), otherwise default to 80
+PORT=${PORT:-80}
 
 # Check if cert is readable (not just exists)
 if [ -f "$CERT_PATH" ] && [ -r "$CERT_PATH" ]; then
   echo "SSL cert found and readable, starting HTTPS mode with Supabase proxy..."
   envsubst '${DOMAIN} ${SUPABASE_URL} ${SUPABASE_HOST} ${SUPABASE_ANON_KEY}' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf
-else
-  echo "SSL cert not found or not readable, starting HTTP-only mode with Supabase proxy..."
 
-  # Build HTTP config with all proxy routes
+elif [ -n "$SUPABASE_URL" ]; then
+  echo "SSL cert not found, starting HTTP mode with Supabase proxy..."
+
   cat > /etc/nginx/conf.d/default.conf << NGINXEOF
 server {
-    listen 80;
+    listen ${PORT};
     server_name _;
     root /usr/share/nginx/html;
     index index.html;
-
-    # GEO-IP BLOCK (Vietnam only via Cloudflare)
-    set \$geo_block 0;
-    if (\$http_cf_ipcountry !~* "^(VN|)$") {
-        set \$geo_block 1;
-    }
-
-    location /.well-known/acme-challenge/ {
-        root /var/www/certbot;
-    }
 
     # REST API proxy
     location /supaapi/ {
@@ -103,9 +98,6 @@ server {
 
     # SPA fallback
     location / {
-        if (\$geo_block = 1) {
-            rewrite ^ /blocked.html last;
-        }
         try_files \$uri \$uri/ /index.html;
     }
 
@@ -120,6 +112,32 @@ server {
     gzip_min_length 256;
 }
 NGINXEOF
+
+else
+  echo "No SUPABASE_URL set, starting simple static mode (Railway/simple deploy)..."
+
+  cat > /etc/nginx/conf.d/default.conf << NGINXEOF
+server {
+    listen ${PORT};
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    location / {
+        try_files \$uri \$uri/ /index.html;
+    }
+
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml text/javascript image/svg+xml;
+    gzip_min_length 256;
+}
+NGINXEOF
 fi
 
 exec nginx -g "daemon off;"
+
