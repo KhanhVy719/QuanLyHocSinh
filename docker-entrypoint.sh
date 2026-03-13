@@ -10,6 +10,11 @@ fi
 
 # Use PORT env var if set (Railway), otherwise default to 80
 PORT=${PORT:-80}
+echo "Starting on PORT=${PORT}..."
+
+# Remove template to prevent nginx:alpine auto-processing with empty vars
+rm -f /etc/nginx/templates/default.conf.template
+rm -f /etc/nginx/conf.d/default.conf
 
 # Check if cert is readable (not just exists)
 if [ -f "$CERT_PATH" ] && [ -r "$CERT_PATH" ]; then
