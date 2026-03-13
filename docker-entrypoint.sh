@@ -17,6 +17,20 @@ rm -f /etc/nginx/conf.d/default.conf
 
 echo "=== Config: PORT=${PORT}, SUPABASE_URL=${SUPABASE_URL:-[not set]} ==="
 
+# Generate runtime config for frontend (Railway: VITE_ vars not available at build time)
+RUNTIME_URL="${VITE_SUPABASE_URL:-$SUPABASE_URL}"
+RUNTIME_KEY="${VITE_SUPABASE_ANON_KEY:-$SUPABASE_ANON_KEY}"
+if [ -n "$RUNTIME_URL" ]; then
+  echo "Injecting runtime Supabase config: ${RUNTIME_URL}"
+  cat > /usr/share/nginx/html/__config.js << EOF
+window.__SUPABASE_URL__ = "${RUNTIME_URL}";
+window.__SUPABASE_ANON_KEY__ = "${RUNTIME_KEY}";
+EOF
+else
+  echo "No Supabase URL for runtime injection"
+  echo "// no runtime config" > /usr/share/nginx/html/__config.js
+fi
+
 # Check if cert is readable (not just exists)
 if [ -f "$CERT_PATH" ] && [ -r "$CERT_PATH" ]; then
   echo "Mode: HTTPS + Supabase proxy"
